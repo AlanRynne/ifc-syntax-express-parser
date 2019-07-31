@@ -5,36 +5,26 @@ const lexer = moo.states({
     main: {
         space: { match: /\s+/, lineBreaks: true },
         ';': ';',
-        schema: 'SCHEMA',
-        schema_end: 'END_SCHEMA',
         ent_start: { match: ['ENTITY', 'TYPE', 'FUNCTION', 'RULE'], push: 'ifcEntity' },
         cmnt_start: { match: "(*", push: 'comment'},
-        word: /[a-zA-Z0-9]+/
+        word: {match:/[a-zA-Z0-9_]+/, type: moo.keywords({
+            schema: 'SCHEMA',
+            schema_end: 'END_SCHEMA'
+        })}
     },
     ifcEntity: {
         space: { match: /\s+/, lineBreaks: true },
-        equals: '=',
-        ';': ';',
-        ',':',',
-        ':':':',
-        '[': '[',
-        ']': ']',
-        '(':'(',
-        ')':')',
-        '?':'?',
-        "'": {match:"'", push:'string'},
-        primitive: ['REAL','BINARY','LOGICAL','BOOLEAN','NUMBER','INTEGER','STRING'],
-        derive: { match: 'DERIVE', next: 'unsupported' },
-        unique: "UNIQUE",
-        enum: { match: ['ENUMERATION','SELECT'], push: 'enumValues' },
-        inverse: { match: 'INVERSE'},
-        where: { match: 'WHERE', next: 'unsupported' },
-        funcStuff: {match: ['LOCAL','CASE','IF', 'RETURN'], next: 'unsupported'},
-        keywords: ['OF', 'IN', 'SELF', 'OR'],
-        list: ['LIST','ARRAY','BAG','SET'],
-        ent_end: { match: ['END_ENTITY','END_TYPE','END_FUNCTION','END_RULE'], pop: true },
         number: /\d+/,
-        word: /\w+/,
+        punctuation: ['=', ';', ',',':','[',']','(',')','?'],
+        "'": {match:"'", push:'string'},
+        enum: { match: ['ENUMERATION','SELECT'], push: 'enumValues' },
+        ent_end: { match: ['END_ENTITY','END_TYPE','END_FUNCTION','END_RULE'], pop: true },
+        unsupported: { match: ['DERIVE','WHERE','LOCAL','CASE','IF', 'RETURN'], next: 'unsupported' },
+        word: {match: /\w+/, type: moo.keywords({
+            list: ['LIST','ARRAY','BAG','SET'],
+            primitive: ['REAL','BINARY','LOGICAL','BOOLEAN','NUMBER','INTEGER','STRING'],
+            keywords: ['OF', 'IN', 'SELF', 'OR', 'INVERSE','UNIQUE']
+        })} 
     },
     string: {
         "'": { match: '\'', pop: true },
@@ -72,7 +62,7 @@ main -> type {% id %}
         | entity {% id %}
         | function {% id %}
         | rule {% id %}
-        | "END_SCHEMA" _ ";" {%
+        | %schema_end _ ";" {%
             function(data) {
                 return null
             }
@@ -159,7 +149,7 @@ functionReturn -> ("GENERIC" _ ":"):? _ typeInput{%
         }
     }
 %}
-functionContent -> (%funcStuff | "WHERE") (( _ (anything|string)):+ _ ";"):+ {% 
+functionContent -> %unsupported (( _ (anything|string)):+ _ ";"):+ {% 
 
     function(data) {
         return null
@@ -261,11 +251,11 @@ listDef -> %list
         _ ("[" _ (number | word) _ ":" _ (number | "?" {%(data) => [null] %} | word) _ "]"):? 
         _ "OF" 
         _ ("UNIQUE" | "GENERIC" _ ":"):? 
-        _ (%word | %primitive | listDef) {%
+        _ ( listDef | %word {%(data)=> [data[0].text] %} | %primitive {%(data)=>[data[0].text] %}) {%
     function(data) {
         return {
             type: data[0].text,
-            contains: data[8][0].text,
+            contains: data[8][0],
             minSize: data[2] ? data[2][2][0] : null,
             maxSize: data[2]? data[2][6][0] : null,
         }
@@ -358,7 +348,7 @@ select -> "SELECT" _ parenList {%
 stringDef -> "STRING" _ "(" _ number _ ")" (_ "FIXED"):? {%
     function(data) {
         return {
-            type: "string",
+            type: "STRING",
             maxSize: data[4],
             fixed: data[7] ? true : false
         }

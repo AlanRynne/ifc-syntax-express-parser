@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace IFC4x2.Net
+namespace IFC4X2
 {
     public class ExpressBase<T>
     {
@@ -18,6 +18,7 @@ namespace IFC4x2.Net
 
     #region Primitives
 
+    public class eObject : object { }
     public class eString : ExpressBase<string>
     {
         private bool Fixed;
@@ -45,6 +46,19 @@ namespace IFC4x2.Net
         }
     }
 
+    public class eBinary : ExpressBase<int>
+    {
+        public eBinary(int value) : base(value)
+        {
+        }
+    }
+
+    public class eLogical : ExpressBase<bool?>
+    {
+        public eLogical(bool? value) : base(value)
+        {
+        }
+    }
     #endregion
 
     #region Collections

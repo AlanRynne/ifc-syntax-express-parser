@@ -225,7 +225,7 @@
       "ifcType": "type",
       "name": "IfcGloballyUniqueId",
       "type": {
-        "type": "string",
+        "type": "STRING",
         "maxSize": "22",
         "fixed": true
       }
@@ -244,7 +244,7 @@
       "ifcType": "type",
       "name": "IfcIdentifier",
       "type": {
-        "type": "string",
+        "type": "STRING",
         "maxSize": "255",
         "fixed": false
       }
@@ -288,7 +288,7 @@
       "ifcType": "type",
       "name": "IfcLabel",
       "type": {
-        "type": "string",
+        "type": "STRING",
         "maxSize": "255",
         "fixed": false
       }
@@ -6466,6 +6466,12 @@
         "ControlPointsList": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcCartesianPoint",
+              "minSize": "2",
+              "maxSize": null
+            },
             "minSize": "2",
             "maxSize": null
           },
@@ -7509,6 +7515,12 @@
         "CoordList": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcLengthMeasure",
+              "minSize": "2",
+              "maxSize": "2"
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -7539,6 +7551,12 @@
         "CoordList": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcLengthMeasure",
+              "minSize": "3",
+              "maxSize": "3"
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -8035,6 +8053,12 @@
         "ColourList": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcNormalisedRatioMeasure",
+              "minSize": "3",
+              "maxSize": "3"
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -13284,6 +13308,12 @@
         "InnerCoordIndices": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcPositiveInteger",
+              "minSize": "3",
+              "maxSize": null
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -13328,6 +13358,12 @@
         "TexCoordIndex": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcPositiveInteger",
+              "minSize": "3",
+              "maxSize": "3"
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -18062,6 +18098,12 @@
         "WeightsData": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcReal",
+              "minSize": "2",
+              "maxSize": null
+            },
             "minSize": "2",
             "maxSize": null
           },
@@ -21754,6 +21796,12 @@
         "Locations": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcLengthMeasure",
+              "minSize": "1",
+              "maxSize": "2"
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -23818,6 +23866,12 @@
         "TexCoordsList": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcParameterValue",
+              "minSize": "2",
+              "maxSize": "2"
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -24125,6 +24179,12 @@
         "Normals": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcParameterValue",
+              "minSize": "3",
+              "maxSize": "3"
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -24137,6 +24197,12 @@
         "CoordIndex": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "IfcPositiveInteger",
+              "minSize": "3",
+              "maxSize": "3"
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -25734,6 +25800,12 @@
         "Lis": {
           "type": {
             "type": "LIST",
+            "contains": {
+              "type": "LIST",
+              "contains": "T",
+              "minSize": "1",
+              "maxSize": null
+            },
             "minSize": "1",
             "maxSize": null
           },
@@ -25759,6 +25831,12 @@
       "returns": {
         "type": {
           "type": "ARRAY",
+          "contains": {
+            "type": "ARRAY",
+            "contains": "T",
+            "minSize": "Low2",
+            "maxSize": "U2"
+          },
           "minSize": "Low1",
           "maxSize": "U1"
         },

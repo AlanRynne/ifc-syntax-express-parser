@@ -22,6 +22,7 @@ Modeling Support Group of the
 International Alliance for Interoperability
 compiled by Thomas Liebich tl@aec3.com
 *)
+
 SCHEMA IFC2X3;
 
 TYPE IfcAbsorbedDoseMeasure = REAL;
@@ -52,7 +53,7 @@ END_TYPE;
 
 TYPE IfcCompoundPlaneAngleMeasure = LIST [3:3] OF INTEGER;
  WHERE
-	WR1 : { -360 <= SELF[1] < 360 };
+	WR1 : { -360.33 <= SELF[1] < 360 };
 	WR2 : { -60 <= SELF[2] < 60 };
 	WR3 : { -60 <= SELF[3] < 60 };
 	WR4 : ((SELF[1] >= 0) AND (SELF[2] >= 0) AND (SELF[3] >= 0)) OR ((SELF[1] <= 0) AND (SELF[2] <= 0) AND (SELF[3] <= 0));

@@ -9,36 +9,26 @@ const lexer = moo.states({
     main: {
         space: { match: /\s+/, lineBreaks: true },
         ';': ';',
-        schema: 'SCHEMA',
-        schema_end: 'END_SCHEMA',
         ent_start: { match: ['ENTITY', 'TYPE', 'FUNCTION', 'RULE'], push: 'ifcEntity' },
         cmnt_start: { match: "(*", push: 'comment'},
-        word: /[a-zA-Z0-9]+/
+        word: {match:/[a-zA-Z0-9_]+/, type: moo.keywords({
+            schema: 'SCHEMA',
+            schema_end: 'END_SCHEMA'
+        })}
     },
     ifcEntity: {
         space: { match: /\s+/, lineBreaks: true },
-        equals: '=',
-        ';': ';',
-        ',':',',
-        ':':':',
-        '[': '[',
-        ']': ']',
-        '(':'(',
-        ')':')',
-        '?':'?',
-        "'": {match:"'", push:'string'},
-        primitive: ['REAL','BINARY','LOGICAL','BOOLEAN','NUMBER','INTEGER','STRING'],
-        derive: { match: 'DERIVE', next: 'unsupported' },
-        unique: "UNIQUE",
-        enum: { match: ['ENUMERATION','SELECT'], push: 'enumValues' },
-        inverse: { match: 'INVERSE'},
-        where: { match: 'WHERE', next: 'unsupported' },
-        funcStuff: {match: ['LOCAL','CASE','IF', 'RETURN'], next: 'unsupported'},
-        keywords: ['OF', 'IN', 'SELF', 'OR'],
-        list: ['LIST','ARRAY','BAG','SET'],
-        ent_end: { match: ['END_ENTITY','END_TYPE','END_FUNCTION','END_RULE'], pop: true },
         number: /\d+/,
-        word: /\w+/,
+        punctuation: ['=', ';', ',',':','[',']','(',')','?'],
+        "'": {match:"'", push:'string'},
+        enum: { match: ['ENUMERATION','SELECT'], push: 'enumValues' },
+        ent_end: { match: ['END_ENTITY','END_TYPE','END_FUNCTION','END_RULE'], pop: true },
+        unsupported: { match: ['DERIVE','WHERE','LOCAL','CASE','IF', 'RETURN'], next: 'unsupported' },
+        word: {match: /\w+/, type: moo.keywords({
+            list: ['LIST','ARRAY','BAG','SET'],
+            primitive: ['REAL','BINARY','LOGICAL','BOOLEAN','NUMBER','INTEGER','STRING'],
+            keywords: ['OF', 'IN', 'SELF', 'OR', 'INVERSE','UNIQUE']
+        })} 
     },
     string: {
         "'": { match: '\'', pop: true },
@@ -104,7 +94,7 @@ var grammar = {
     {"name": "main", "symbols": ["entity"], "postprocess": id},
     {"name": "main", "symbols": ["function"], "postprocess": id},
     {"name": "main", "symbols": ["rule"], "postprocess": id},
-    {"name": "main", "symbols": [{"literal":"END_SCHEMA"}, "_", {"literal":";"}], "postprocess": 
+    {"name": "main", "symbols": [(lexer.has("schema_end") ? {type: "schema_end"} : schema_end), "_", {"literal":";"}], "postprocess": 
         function(data) {
             return null
         }
@@ -196,8 +186,6 @@ var grammar = {
             }
         }
         },
-    {"name": "functionContent$subexpression$1", "symbols": [(lexer.has("funcStuff") ? {type: "funcStuff"} : funcStuff)]},
-    {"name": "functionContent$subexpression$1", "symbols": [{"literal":"WHERE"}]},
     {"name": "functionContent$ebnf$1$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": ["anything"]},
     {"name": "functionContent$ebnf$1$subexpression$1$ebnf$1$subexpression$1$subexpression$1", "symbols": ["string"]},
     {"name": "functionContent$ebnf$1$subexpression$1$ebnf$1$subexpression$1", "symbols": ["_", "functionContent$ebnf$1$subexpression$1$ebnf$1$subexpression$1$subexpression$1"]},
@@ -218,7 +206,7 @@ var grammar = {
     {"name": "functionContent$ebnf$1$subexpression$2$ebnf$1", "symbols": ["functionContent$ebnf$1$subexpression$2$ebnf$1", "functionContent$ebnf$1$subexpression$2$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
     {"name": "functionContent$ebnf$1$subexpression$2", "symbols": ["functionContent$ebnf$1$subexpression$2$ebnf$1", "_", {"literal":";"}]},
     {"name": "functionContent$ebnf$1", "symbols": ["functionContent$ebnf$1", "functionContent$ebnf$1$subexpression$2"], "postprocess": function arrpush(d) {return d[0].concat([d[1]]);}},
-    {"name": "functionContent", "symbols": ["functionContent$subexpression$1", "functionContent$ebnf$1"], "postprocess":  
+    {"name": "functionContent", "symbols": [(lexer.has("unsupported") ? {type: "unsupported"} : unsupported), "functionContent$ebnf$1"], "postprocess":  
         
         function(data) {
             return null
@@ -338,14 +326,14 @@ var grammar = {
     {"name": "listDef$ebnf$2$subexpression$1", "symbols": [{"literal":"GENERIC"}, "_", {"literal":":"}]},
     {"name": "listDef$ebnf$2", "symbols": ["listDef$ebnf$2$subexpression$1"], "postprocess": id},
     {"name": "listDef$ebnf$2", "symbols": [], "postprocess": function(d) {return null;}},
-    {"name": "listDef$subexpression$1", "symbols": [(lexer.has("word") ? {type: "word"} : word)]},
-    {"name": "listDef$subexpression$1", "symbols": [(lexer.has("primitive") ? {type: "primitive"} : primitive)]},
     {"name": "listDef$subexpression$1", "symbols": ["listDef"]},
+    {"name": "listDef$subexpression$1", "symbols": [(lexer.has("word") ? {type: "word"} : word)], "postprocess": (data)=> [data[0].text]},
+    {"name": "listDef$subexpression$1", "symbols": [(lexer.has("primitive") ? {type: "primitive"} : primitive)], "postprocess": (data)=>[data[0].text]},
     {"name": "listDef", "symbols": [(lexer.has("list") ? {type: "list"} : list), "_", "listDef$ebnf$1", "_", {"literal":"OF"}, "_", "listDef$ebnf$2", "_", "listDef$subexpression$1"], "postprocess": 
         function(data) {
             return {
                 type: data[0].text,
-                contains: data[8][0].text,
+                contains: data[8][0],
                 minSize: data[2] ? data[2][2][0] : null,
                 maxSize: data[2]? data[2][6][0] : null,
             }
@@ -498,7 +486,7 @@ var grammar = {
     {"name": "stringDef", "symbols": [{"literal":"STRING"}, "_", {"literal":"("}, "_", "number", "_", {"literal":")"}, "stringDef$ebnf$1"], "postprocess": 
         function(data) {
             return {
-                type: "string",
+                type: "STRING",
                 maxSize: data[4],
                 fixed: data[7] ? true : false
             }
