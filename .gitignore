@@ -1,0 +1,11 @@
+node_modules/
+
+IFC4x2.Net/*
+**/bin/
+**/obj/
+out/*
+!out/.gitkeep
+**/Icon
+src/grammar/*.ts
+dist/
+coverage/

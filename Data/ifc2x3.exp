@@ -1,6 +1,6 @@
 (*
 Copyright by:
-International Alliance for Interoperability, 1996-2005
+buildingSMART International Ltd., 1996-2020
 
 All rights reserved. No part of this documentation may be
 reproduced, stored in a retrieval system, or transmitted
@@ -8,20 +8,19 @@ in any form or by any means, without the prior written
 permission of the owner.
 
 Contents:
-full IFC object model EXPRESS definitions for the IFC2x Edition 3 final version
-
+full IFC object model EXPRESS definitions for the IFC2x Edition 3 Technical Corrigendum 1 release
 
 - express longform distribution
 - compiled for EXPRESS version 1 technical corrigendum 2
 
 Issue date:
-December 15, 2005
+July 10, 2007
 
 Development Team:
-Modeling Support Group of the 
-International Alliance for Interoperability
-compiled by Thomas Liebich tl@aec3.com
+Modeling Support Group of buildingSMART International Ltd.
+compiled by Thomas Liebich
 *)
+
 SCHEMA IFC2X3;
 
 TYPE IfcAbsorbedDoseMeasure = REAL;
@@ -50,7 +49,7 @@ END_TYPE;
 TYPE IfcComplexNumber = ARRAY [1:2] OF REAL;
 END_TYPE;
 
-TYPE IfcCompoundPlaneAngleMeasure = LIST [3:3] OF INTEGER;
+TYPE IfcCompoundPlaneAngleMeasure = LIST [3:4] OF INTEGER;
  WHERE
 	WR1 : { -360 <= SELF[1] < 360 };
 	WR2 : { -60 <= SELF[2] < 60 };
@@ -3674,6 +3673,10 @@ ENTITY IfcCovering
  INVERSE
 	CoversSpaces : SET [0:1] OF IfcRelCoversSpaces FOR RelatedCoverings;
 	Covers : SET [0:1] OF IfcRelCoversBldgElements FOR RelatedCoverings;
+ WHERE
+	WR61 : NOT(EXISTS(PredefinedType)) OR 
+              (PredefinedType <> IfcCoveringTypeEnum.USERDEFINED) OR 
+              ((PredefinedType = IfcCoveringTypeEnum.USERDEFINED) AND EXISTS (SELF\IfcObject.ObjectType));
 END_ENTITY;
 
 ENTITY IfcCoveringType
@@ -3833,7 +3836,7 @@ ENTITY IfcDerivedUnit;
 	UnitType : IfcDerivedUnitEnum;
 	UserDefinedType : OPTIONAL IfcLabel;
  DERIVE
-	Dimensions : IfcDimensionalExponents := IfcDeriveDimensionalExponents(SELF);
+	Dimensions : IfcDimensionalExponents := IfcDeriveDimensionalExponents(Elements);
  WHERE
 	WR1 : (SIZEOF (Elements) > 1) OR ((SIZEOF (Elements) = 1) AND (Elements[1].Exponent <> 1 ));
 	WR2 : (UnitType <> IfcDerivedUnitEnum.USERDEFINED) OR
@@ -4295,11 +4298,11 @@ ENTITY IfcElement
  SUBTYPE OF (IfcProduct);
 	Tag : OPTIONAL IfcIdentifier;
  INVERSE
+	HasStructuralMember : SET [0:?] OF IfcRelConnectsStructuralElement FOR RelatingElement;
 	FillsVoids : SET [0:1] OF IfcRelFillsElement FOR RelatedBuildingElement;
 	ConnectedTo : SET [0:?] OF IfcRelConnectsElements FOR RelatingElement;
 	HasCoverings : SET [0:?] OF IfcRelCoversBldgElements FOR RelatingBuildingElement;
 	HasProjections : SET [0:?] OF IfcRelProjectsElement FOR RelatingElement;
-	HasStructuralMember : SET [0:?] OF IfcRelConnectsStructuralElement FOR RelatingElement;
 	ReferencedInStructures : SET [0:?] OF IfcRelReferencedInSpatialStructure FOR RelatedElements;
 	HasPorts : SET [0:?] OF IfcRelConnectsPortToElement FOR RelatedElement;
 	HasOpenings : SET [0:?] OF IfcRelVoidsElement FOR RelatingBuildingElement;
@@ -4595,20 +4598,7 @@ ENTITY IfcFillAreaStyle
                'IFC2X3.IFCEXTERNALLYDEFINEDHATCHSTYLE' IN
                 TYPEOF(Style)
                )) <= 1;
-	WR13 : (SIZEOF(QUERY(Style <* SELF.FillStyles |
-               'IFC2X3.IFCEXTERNALLYDEFINEDHATCHSTYLE' IN
-                TYPEOF(Style)
-               )) >= 1)
-             XOR
-             (SIZEOF(QUERY(Style <* SELF.FillStyles |
-               'IFC2X3.IFCFILLAREASTYLEHATCHING' IN
-                TYPEOF(Style)
-               )) >= 1)
-             XOR
-             (SIZEOF(QUERY(Style <* SELF.FillStyles |
-               'IFC2X3.IFCFILLAREASTYLETILES' IN
-                TYPEOF(Style)
-               )) >= 1);
+	WR13 : IfcCorrectFillAreaStyle(SELF.FillStyles);
 END_ENTITY;
 
 ENTITY IfcFillAreaStyleHatching
@@ -5734,8 +5724,6 @@ END_ENTITY;
 ENTITY IfcPlateType
  SUBTYPE OF (IfcBuildingElementType);
 	PredefinedType : IfcPlateTypeEnum;
- WHERE
-	WR1 : SIZEOF (QUERY(temp <* SELF\IfcObjectDefinition.HasAssociations | 'IFC2X3.IFCRELASSOCIATESMATERIAL' IN TYPEOF(temp) )) = 1;
 END_ENTITY;
 
 ENTITY IfcPoint
@@ -6255,6 +6243,10 @@ END_ENTITY;
 ENTITY IfcRailing
  SUBTYPE OF (IfcBuildingElement);
 	PredefinedType : OPTIONAL IfcRailingTypeEnum;
+ WHERE
+	WR61 : NOT(EXISTS(PredefinedType)) OR
+              (PredefinedType <> IfcRailingTypeEnum.USERDEFINED) OR
+              ((PredefinedType = IfcRailingTypeEnum.USERDEFINED) AND EXISTS (SELF\IfcObject.ObjectType));
 END_ENTITY;
 
 ENTITY IfcRailingType
@@ -6544,7 +6536,8 @@ ENTITY IfcRelAssociatesMaterial
                OR ('IFC2X3.IFCVIRTUALELEMENT' IN TYPEOF(temp))
              )) = 0;
 	WR22 : SIZEOF(QUERY(temp <* SELF\IfcRelAssociates.RelatedObjects | 
-             (NOT('IFC2X3.IFCPRODUCT' IN TYPEOF(temp)) AND NOT('IFC2X3.IFCTYPEPRODUCT' IN TYPEOF(temp)))
+             (NOT('IFC2X3.IFCPRODUCT' IN TYPEOF(temp)) 
+              AND NOT('IFC2X3.IFCTYPEPRODUCT' IN TYPEOF(temp)))
              )) = 0;
 END_ENTITY;
 
@@ -6596,9 +6589,6 @@ ENTITY IfcRelConnectsPathElements
 	RelatedPriorities : LIST [0:?] OF INTEGER;
 	RelatedConnectionType : IfcConnectionTypeEnum;
 	RelatingConnectionType : IfcConnectionTypeEnum;
- DERIVE
-	RelatedLayerCount : INTEGER := IfcNoOfLayers(SELF\IfcRelConnectsElements.RelatedElement);
-	RelatingLayerCount : INTEGER := IfcNoOfLayers(SELF\IfcRelConnectsElements.RelatingElement);
 END_ENTITY;
 
 ENTITY IfcRelConnectsPortToElement
@@ -6678,8 +6668,6 @@ ENTITY IfcRelDecomposes
 	RelatedObjects : SET [1:?] OF IfcObjectDefinition;
  WHERE
 	WR31 : SIZEOF(QUERY(Temp <* RelatedObjects | RelatingObject :=: Temp)) = 0;
-	WR32 : SIZEOF(QUERY(Temp <* RelatedObjects | 'IFC2X3.IFCTYPEOBJECT' IN TYPEOF(temp))) = 0;
-	WR33 : NOT('IFC2X3.IFCTYPEOBJECT' IN TYPEOF(RelatingObject));
 END_ENTITY;
 
 ENTITY IfcRelDefines
@@ -6828,7 +6816,7 @@ ENTITY IfcRepresentation
 	Items : SET [1:?] OF IfcRepresentationItem;
  INVERSE
 	RepresentationMap : SET [0:1] OF IfcRepresentationMap FOR MappedRepresentation;
-	LayerAssignments : SET [0:?] OF IfcPresentationLayerAssignment FOR Assigneditems;
+	LayerAssignments : SET [0:?] OF IfcPresentationLayerAssignment FOR AssignedItems;
 	OfProductRepresentation : SET [0:1] OF IfcProductRepresentation FOR Representations;
 END_ENTITY;
 
@@ -7089,8 +7077,9 @@ ENTITY IfcSlab
  SUBTYPE OF (IfcBuildingElement);
 	PredefinedType : OPTIONAL IfcSlabTypeEnum;
  WHERE
-	WR2 : (PredefinedType <> IfcSlabTypeEnum.USERDEFINED) OR
-            ((PredefinedType = IfcSlabTypeEnum.USERDEFINED) AND EXISTS(SELF\IfcObject.ObjectType));
+	WR61 : NOT(EXISTS(PredefinedType)) OR
+              (PredefinedType <> IfcSlabTypeEnum.USERDEFINED) OR
+              ((PredefinedType = IfcSlabTypeEnum.USERDEFINED) AND EXISTS (SELF\IfcObject.ObjectType));
 END_ENTITY;
 
 ENTITY IfcSlabType
@@ -7339,7 +7328,7 @@ ENTITY IfcStructuralLoadGroup
 	PredefinedType : IfcLoadGroupTypeEnum;
 	ActionType : IfcActionTypeEnum;
 	ActionSource : IfcActionSourceTypeEnum;
-	Coefficient : OPTIONAL IfcPositiveRatioMeasure;
+	Coefficient : OPTIONAL IfcRatioMeasure;
 	Purpose : OPTIONAL IfcLabel;
  INVERSE
 	SourceOfResultGroup : SET [0:1] OF IfcStructuralResultGroup FOR ResultForLoadGroup;
@@ -8309,5 +8298,1272 @@ ENTITY IfcZone
  WHERE
 	WR1 : SIZEOF (QUERY (temp <* SELF\IfcGroup.IsGroupedBy.RelatedObjects |  NOT(('IFC2X3.IFCZONE' IN TYPEOF(temp)) OR ('IFC2X3.IFCSPACE' IN TYPEOF(temp))) )) = 0;
 END_ENTITY;
+
+FUNCTION IfcAddToBeginOfList
+	(AScalar : GENERIC;
+       AList   : LIST OF GENERIC:AL)
+	: LIST[1:?] OF GENERIC:AL;
+    
+      LOCAL
+        Result : LIST OF GENERIC:AL := [];
+      END_LOCAL;
+  
+    IF NOT(EXISTS(AScalar)) THEN
+      Result := AList;
+    ELSE
+      Result := Result + AScalar;
+      IF (HIINDEX(AList) >= 1) THEN
+        REPEAT i:=1 TO HIINDEX(AList);
+          Result[i+1] := AList[i];
+        END_REPEAT;
+      END_IF;
+    END_IF;
+    RETURN(Result);
+END_FUNCTION;
+
+FUNCTION IfcBaseAxis
+	(Dim : INTEGER; 
+     Axis1, Axis2, Axis3 : IfcDirection)
+	: LIST [2:3] OF IfcDirection;
+  
+  LOCAL
+    U : LIST [2:3] OF IfcDirection;
+    Factor : REAL;
+    D1, D2 : IfcDirection;
+  END_LOCAL;
+  
+    IF (Dim = 3) THEN 
+      D1 := NVL(IfcNormalise(Axis3), IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0,0.0,1.0]));
+      D2 := IfcFirstProjAxis(D1, Axis1);
+      U  := [D2, IfcSecondProjAxis(D1, D2, Axis2), D1];
+    ELSE
+      IF EXISTS(Axis1) THEN
+        D1 := IfcNormalise(Axis1);
+        U  := [D1, IfcOrthogonalComplement(D1)];
+        IF EXISTS(Axis2) THEN
+          Factor := IfcDotProduct(Axis2, U[2]);
+          IF (Factor < 0.0) THEN
+            U[2].DirectionRatios[1] := -U[2].DirectionRatios[1];
+            U[2].DirectionRatios[2] := -U[2].DirectionRatios[2];
+          END_IF;
+        END_IF;
+      ELSE
+        IF EXISTS(Axis2) THEN
+          D1 := IfcNormalise(Axis2);
+          U  := [IfcOrthogonalComplement(D1), D1];
+          U[1].DirectionRatios[1] := -U[1].DirectionRatios[1];
+          U[1].DirectionRatios[2] := -U[1].DirectionRatios[2];
+          ELSE
+            U := [IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([1.0, 0.0]), 
+                  IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0, 1.0])];
+        END_IF;
+      END_IF;
+    END_IF;
+    RETURN(U);
+END_FUNCTION;
+
+FUNCTION IfcBooleanChoose
+	(B : BOOLEAN ;
+       Choice1, Choice2 : Generic : Item)
+	: Generic : Item;
+    IF B THEN
+       RETURN (Choice1);
+    ELSE
+       RETURN (Choice2);
+    END_IF;
+END_FUNCTION;
+
+FUNCTION IfcBuild2Axes
+	(RefDirection : IfcDirection)
+	: LIST [2:2] OF IfcDirection;
+  LOCAL
+    D : IfcDirection := NVL(IfcNormalise(RefDirection),
+        IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([1.0,0.0]));
+  END_LOCAL;
+    RETURN([D, IfcOrthogonalComplement(D)]);
+END_FUNCTION;
+
+FUNCTION IfcBuildAxes
+	(Axis, RefDirection : IfcDirection)
+	: LIST [3:3] OF IfcDirection;
+  LOCAL
+    D1, D2 : IfcDirection;
+  END_LOCAL;
+    D1 := NVL(IfcNormalise(Axis), IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0,0.0,1.0]));
+    D2 := IfcFirstProjAxis(D1, RefDirection);
+    RETURN ([D2, IfcNormalise(IfcCrossProduct(D1,D2))\IfcVector.Orientation, D1]);
+END_FUNCTION;
+
+FUNCTION IfcCorrectDimensions
+	(m   : IfcUnitEnum; Dim : IfcDimensionalExponents)
+	: LOGICAL;  
+  CASE m OF
+    LENGTHUNIT : IF
+      Dim = (IfcDimensionalExponents (1, 0, 0, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    MASSUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 1, 0, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    TIMEUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, 1, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    ELECTRICCURRENTUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, 0, 1, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    THERMODYNAMICTEMPERATUREUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, 0, 0, 1, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    AMOUNTOFSUBSTANCEUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, 0, 0, 0, 1, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    LUMINOUSINTENSITYUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, 0, 0, 0, 0, 1))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    PLANEANGLEUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, 0, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    SOLIDANGLEUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, 0, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    AREAUNIT : IF
+      Dim = (IfcDimensionalExponents (2, 0, 0, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    VOLUMEUNIT : IF
+      Dim = (IfcDimensionalExponents (3, 0, 0, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+  
+    ABSORBEDDOSEUNIT : IF
+      Dim = (IfcDimensionalExponents (2, 0, -2, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    RADIOACTIVITYUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, -1, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    ELECTRICCAPACITANCEUNIT : IF
+      Dim = (IfcDimensionalExponents (-2, 1, 4, 1, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    DOSEEQUIVALENTUNIT : IF
+      Dim = (IfcDimensionalExponents (2, 0, -2, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    ELECTRICCHARGEUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, 1, 1, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    ELECTRICCONDUCTANCEUNIT : IF
+      Dim = (IfcDimensionalExponents (-2, -1, 3, 2, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    ELECTRICVOLTAGEUNIT : IF
+      Dim = (IfcDimensionalExponents (2, 1, -3, -1, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    ELECTRICRESISTANCEUNIT : IF
+      Dim = (IfcDimensionalExponents (2, 1, -3, -2, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    ENERGYUNIT : IF
+      Dim = (IfcDimensionalExponents (2, 1, -2, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    FORCEUNIT : IF
+      Dim = (IfcDimensionalExponents (1, 1, -2, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    FREQUENCYUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, -1, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    INDUCTANCEUNIT : IF
+      Dim = (IfcDimensionalExponents (2, 1, -2, -2, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    ILLUMINANCEUNIT : IF
+      Dim = (IfcDimensionalExponents (-2, 0, 0, 0, 0, 0, 1))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    LUMINOUSFLUXUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 0, 0, 0, 0, 0, 1))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    MAGNETICFLUXUNIT : IF
+      Dim = (IfcDimensionalExponents (2, 1, -2, -1, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    MAGNETICFLUXDENSITYUNIT : IF
+      Dim = (IfcDimensionalExponents (0, 1, -2, -1, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    POWERUNIT : IF
+      Dim = (IfcDimensionalExponents (2, 1, -3, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+    PRESSUREUNIT : IF
+      Dim = (IfcDimensionalExponents (-1, 1, -2, 0, 0, 0, 0))
+        THEN RETURN(TRUE);
+        ELSE RETURN(FALSE);
+      END_IF;
+  
+    OTHERWISE :
+      RETURN (UNKNOWN);
+  END_CASE;
+END_FUNCTION;
+
+FUNCTION IfcCorrectFillAreaStyle
+	(Styles : SET[1:?] OF IfcFillStyleSelect)
+	: LOGICAL;
+  
+  LOCAL
+     Hatching : INTEGER := 0;
+     Tiles    : INTEGER := 0;
+     Colour   : INTEGER := 0;
+     External : INTEGER := 0;
+  END_LOCAL;
+  
+  
+  External := SIZEOF(QUERY(Style <* Styles |
+    'IFC2X3.IFCEXTERNALLYDEFINEDHATCHSTYLE' IN
+     TYPEOF(Style)));
+  
+  Hatching  := SIZEOF(QUERY(Style <* Styles |
+    'IFC2X3.IFCFILLAREASTYLEHATCHING' IN
+     TYPEOF(Style)));
+  
+  Tiles     := SIZEOF(QUERY(Style <* Styles |
+    'IFC2X3.IFCFILLAREASTYLETILES' IN
+     TYPEOF(Style)));
+  
+  Colour    := SIZEOF(QUERY(Style <* Styles |
+    'IFC2X3.IFCCOLOUR' IN
+     TYPEOF(Style)));
+  
+  
+  IF (External > 1) THEN
+    RETURN (FALSE);
+  END_IF;
+  
+  
+  IF ((External = 1) AND ((Hatching > 0) OR (Tiles > 0) OR (Colour > 0))) THEN
+    RETURN (FALSE);
+  END_IF;
+  
+  
+  IF (Colour > 1) THEN
+    RETURN (FALSE);
+  END_IF;
+  
+  IF ((Hatching > 0) AND (Tiles >0)) THEN
+    RETURN (FALSE);
+  END_IF;
+  
+  RETURN(TRUE);
+END_FUNCTION;
+
+FUNCTION IfcCorrectLocalPlacement
+	(AxisPlacement:IfcAxis2Placement; 
+     RelPlacement : IfcObjectPlacement)
+	: LOGICAL;
+  
+    IF (EXISTS(RelPlacement)) THEN
+      IF ('IFC2X3.IFCGRIDPLACEMENT' IN TYPEOF(RelPlacement)) THEN
+        RETURN(?);
+      END_IF;
+      IF ('IFC2X3.IFCLOCALPLACEMENT' IN TYPEOF(RelPlacement)) THEN
+        IF ('IFC2X3.IFCAXIS2PLACEMENT2D' IN TYPEOF(AxisPlacement)) THEN
+          RETURN(TRUE);
+        END_IF;
+        IF ('IFC2X3.IFCAXIS2PLACEMENT3D' IN TYPEOF(AxisPlacement)) THEN
+          IF (RelPlacement.RelativePlacement.Dim = 3) THEN
+            RETURN(TRUE);
+          ELSE
+            RETURN(FALSE);
+          END_IF;
+        END_IF;
+      END_IF;
+    ELSE
+      RETURN(TRUE);  
+    END_IF;
+    RETURN(?);
+END_FUNCTION;
+
+FUNCTION IfcCorrectObjectAssignment
+	(Constraint: IfcObjectTypeEnum; Objects : SET[1:?] OF IfcObjectDefinition)
+	: LOGICAL;
+    
+  LOCAL
+    Count : INTEGER := 0;
+  END_LOCAL;
+  
+      IF NOT(EXISTS(Constraint)) THEN 
+        RETURN(TRUE);
+      END_IF;
+    
+      CASE Constraint OF
+        IfcObjectTypeEnum.NOTDEFINED : RETURN(TRUE);
+        IfcObjectTypeEnum.PRODUCT :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCPRODUCT' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.PROCESS :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCPROCESS' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.CONTROL :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCCONTROL' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.RESOURCE :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCRESOURCE' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.ACTOR :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCACTOR' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.GROUP :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCGROUP' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        IfcObjectTypeEnum.PROJECT :
+          BEGIN
+            Count := SIZEOF(QUERY(temp <* Objects | NOT('IFC2X3.IFCPROJECT' IN TYPEOF(temp))));
+            RETURN(Count = 0);
+          END;
+        OTHERWISE : RETURN(?);
+      END_CASE;
+END_FUNCTION;
+
+FUNCTION IfcCorrectUnitAssignment
+	(Units : SET [1:?] OF IfcUnit)
+	: LOGICAL;
+  
+    LOCAL
+      NamedUnitNumber    : INTEGER := 0;
+      DerivedUnitNumber  : INTEGER := 0;
+      MonetaryUnitNumber : INTEGER := 0;
+      NamedUnitNames     : SET OF IfcUnitEnum := [];
+      DerivedUnitNames   : SET OF IfcDerivedUnitEnum := [];
+    END_LOCAL;
+  
+    NamedUnitNumber    := SIZEOF(QUERY(temp <* Units | ('IFC2X3.IFCNAMEDUNIT' IN TYPEOF(temp)) AND NOT(temp\IfcNamedUnit.UnitType = IfcUnitEnum.USERDEFINED)));
+    DerivedUnitNumber  := SIZEOF(QUERY(temp <* Units | ('IFC2X3.IFCDERIVEDUNIT' IN TYPEOF(temp)) AND NOT(temp\IfcDerivedUnit.UnitType = IfcDerivedUnitEnum.USERDEFINED)));
+    MonetaryUnitNumber := SIZEOF(QUERY(temp <* Units |  'IFC2X3.IFCMONETARYUNIT' IN TYPEOF(temp)));
+  
+    REPEAT i := 1 TO SIZEOF(Units);
+      IF (('IFC2X3.IFCNAMEDUNIT' IN TYPEOF(Units[i])) AND NOT(Units[i]\IfcNamedUnit.UnitType = IfcUnitEnum.USERDEFINED)) THEN
+          NamedUnitNames := NamedUnitNames + Units[i]\IfcNamedUnit.UnitType;
+      END_IF;
+      IF (('IFC2X3.IFCDERIVEDUNIT' IN TYPEOF(Units[i])) AND NOT(Units[i]\IfcDerivedUnit.UnitType = IfcDerivedUnitEnum.USERDEFINED)) THEN
+          DerivedUnitNames := DerivedUnitNames + Units[i]\IfcDerivedUnit.UnitType;
+      END_IF;
+    END_REPEAT;
+  
+    RETURN((SIZEOF(NamedUnitNames) = NamedUnitNumber) AND (SIZEOF(DerivedUnitNames) = DerivedUnitNumber) AND (MonetaryUnitNumber <= 1));
+END_FUNCTION;
+
+FUNCTION IfcCrossProduct
+	(Arg1, Arg2 : IfcDirection)
+	: IfcVector;
+  LOCAL
+    Mag : REAL;
+    Res : IfcDirection;
+    V1,V2  : LIST[3:3] OF REAL;
+    Result : IfcVector;
+  END_LOCAL;
+  
+    IF (NOT EXISTS (Arg1) OR (Arg1.Dim = 2)) OR (NOT EXISTS (Arg2) OR (Arg2.Dim = 2)) THEN
+      RETURN(?);
+    ELSE
+      BEGIN
+        V1  := IfcNormalise(Arg1).DirectionRatios;
+        V2  := IfcNormalise(Arg2).DirectionRatios;
+        Res := IfcRepresentationItem() || IfcGeometricRepresentationItem () 
+               || IfcDirection([(V1[2]*V2[3] - V1[3]*V2[2]), (V1[3]*V2[1] - V1[1]*V2[3]), (V1[1]*V2[2] - V1[2]*V2[1])]);
+        Mag := 0.0;
+        REPEAT i := 1 TO 3;
+          Mag := Mag + Res.DirectionRatios[i]*Res.DirectionRatios[i];
+        END_REPEAT;
+        IF (Mag > 0.0) THEN
+          Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector(Res, SQRT(Mag));
+        ELSE
+          Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector(Arg1, 0.0);
+        END_IF;
+        RETURN(Result);
+      END;
+    END_IF;
+END_FUNCTION;
+
+FUNCTION IfcCurveDim
+	(Curve : IfcCurve)
+	: IfcDimensionCount;
+  
+    IF ('IFC2X3.IFCLINE' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcLine.Pnt.Dim);
+    END_IF;
+    IF ('IFC2X3.IFCCONIC' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcConic.Position.Dim);
+    END_IF;
+    IF ('IFC2X3.IFCPOLYLINE' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcPolyline.Points[1].Dim);
+    END_IF;
+    IF ('IFC2X3.IFCTRIMMEDCURVE' IN TYPEOF(Curve))
+      THEN RETURN(IfcCurveDim(Curve\IfcTrimmedCurve.BasisCurve));
+    END_IF;
+    IF ('IFC2X3.IFCCOMPOSITECURVE' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcCompositeCurve.Segments[1].Dim);
+    END_IF;
+    IF ('IFC2X3.IFCBSPLINECURVE' IN TYPEOF(Curve))
+      THEN RETURN(Curve\IfcBSplineCurve.ControlPointsList[1].Dim);
+    END_IF;
+    IF ('IFC2X3.IFCOFFSETCURVE2D' IN TYPEOF(Curve))
+      THEN RETURN(2); 
+    END_IF;
+    IF ('IFC2X3.IFCOFFSETCURVE3D' IN TYPEOF(Curve))
+      THEN RETURN(3);
+    END_IF;
+  RETURN (?);
+END_FUNCTION;
+
+FUNCTION IfcCurveWeightsPositive
+	(B: IfcRationalBezierCurve)
+	: BOOLEAN;
+     LOCAL
+       Result : BOOLEAN := TRUE;
+     END_LOCAL;
+  
+     REPEAT i := 0 TO B.UpperIndexOnControlPoints;
+       IF B.Weights[i] <= 0.0  THEN
+         Result := FALSE;
+         RETURN(Result);
+       END_IF;
+     END_REPEAT;
+     RETURN(Result);
+END_FUNCTION;
+
+FUNCTION IfcDeriveDimensionalExponents
+	(UnitElements : SET [1:?] Of IfcDerivedUnitElement)
+	: IfcDimensionalExponents;  
+      LOCAL
+      Result : IfcDimensionalExponents :=
+              IfcDimensionalExponents(0, 0, 0, 0, 0, 0, 0);  
+      END_LOCAL;
+      REPEAT i := LOINDEX(UnitElements) TO HIINDEX(UnitElements);
+          Result.LengthExponent := Result.LengthExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.LengthExponent);
+          Result.MassExponent := Result.MassExponent  +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.MassExponent);
+          Result.TimeExponent := Result.TimeExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.TimeExponent);
+          Result.ElectricCurrentExponent := Result.ElectricCurrentExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.ElectricCurrentExponent);
+          Result.ThermodynamicTemperatureExponent := Result.ThermodynamicTemperatureExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.ThermodynamicTemperatureExponent);
+          Result.AmountOfSubstanceExponent := Result.AmountOfSubstanceExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.AmountOfSubstanceExponent);
+          Result.LuminousIntensityExponent := Result.LuminousIntensityExponent +
+            (UnitElements[i].Exponent *
+             UnitElements[i].Unit.Dimensions.LuminousIntensityExponent);
+      END_REPEAT;  
+      RETURN (Result);
+END_FUNCTION;
+
+FUNCTION IfcDimensionsForSiUnit
+	(n : IfcSiUnitName )
+	: IfcDimensionalExponents;
+    CASE n OF
+      METRE          : RETURN (IfcDimensionalExponents
+                               (1, 0, 0, 0, 0, 0, 0));
+      SQUARE_METRE   : RETURN (IfcDimensionalExponents
+                               (2, 0, 0, 0, 0, 0, 0));
+      CUBIC_METRE    : RETURN (IfcDimensionalExponents
+                               (3, 0, 0, 0, 0, 0, 0));
+      GRAM           : RETURN (IfcDimensionalExponents
+                               (0, 1, 0, 0, 0, 0, 0));
+      SECOND         : RETURN (IfcDimensionalExponents
+                               (0, 0, 1, 0, 0, 0, 0));
+      AMPERE         : RETURN (IfcDimensionalExponents
+                               (0, 0, 0, 1, 0, 0, 0));
+      KELVIN         : RETURN (IfcDimensionalExponents
+                               (0, 0, 0, 0, 1, 0, 0));
+      MOLE           : RETURN (IfcDimensionalExponents
+                               (0, 0, 0, 0, 0, 1, 0));
+      CANDELA        : RETURN (IfcDimensionalExponents
+                               (0, 0, 0, 0, 0, 0, 1));
+      RADIAN         : RETURN (IfcDimensionalExponents
+                               (0, 0, 0, 0, 0, 0, 0));
+      STERADIAN      : RETURN (IfcDimensionalExponents
+                               (0, 0, 0, 0, 0, 0, 0));
+      HERTZ          : RETURN (IfcDimensionalExponents
+                               (0, 0, -1, 0, 0, 0, 0));
+      NEWTON         : RETURN (IfcDimensionalExponents
+                               (1, 1, -2, 0, 0, 0, 0));
+      PASCAL         : RETURN (IfcDimensionalExponents
+                               (-1, 1, -2, 0, 0, 0, 0));
+      JOULE          : RETURN (IfcDimensionalExponents
+                               (2, 1, -2, 0, 0, 0, 0));
+      WATT           : RETURN (IfcDimensionalExponents
+                               (2, 1, -3, 0, 0, 0, 0));
+      COULOMB        : RETURN (IfcDimensionalExponents
+                               (0, 0, 1, 1, 0, 0, 0));
+      VOLT           : RETURN (IfcDimensionalExponents
+                               (2, 1, -3, -1, 0, 0, 0));
+      FARAD          : RETURN (IfcDimensionalExponents
+                               (-2, -1, 4, 1, 0, 0, 0));
+      OHM            : RETURN (IfcDimensionalExponents
+                               (2, 1, -3, -2, 0, 0, 0));
+      SIEMENS        : RETURN (IfcDimensionalExponents
+                               (-2, -1, 3, 2, 0, 0, 0));
+      WEBER          : RETURN (IfcDimensionalExponents
+                               (2, 1, -2, -1, 0, 0, 0));
+      TESLA          : RETURN (IfcDimensionalExponents
+                               (0, 1, -2, -1, 0, 0, 0));
+      HENRY          : RETURN (IfcDimensionalExponents
+                               (2, 1, -2, -2, 0, 0, 0));
+      DEGREE_CELSIUS : RETURN (IfcDimensionalExponents
+                               (0, 0, 0, 0, 1, 0, 0));
+      LUMEN          : RETURN (IfcDimensionalExponents
+                               (0, 0, 0, 0, 0, 0, 1));
+      LUX            : RETURN (IfcDimensionalExponents
+                               (-2, 0, 0, 0, 0, 0, 1));
+      BECQUEREL      : RETURN (IfcDimensionalExponents
+                               (0, 0, -1, 0, 0, 0, 0));
+      GRAY           : RETURN (IfcDimensionalExponents
+                               (2, 0, -2, 0, 0, 0, 0));
+      SIEVERT        : RETURN (IfcDimensionalExponents
+                               (2, 0, -2, 0, 0, 0, 0));
+      OTHERWISE      : RETURN (IfcDimensionalExponents
+                               (0, 0, 0, 0, 0, 0, 0));
+    END_CASE;
+END_FUNCTION;
+
+FUNCTION IfcDotProduct
+	(Arg1, Arg2 : IfcDirection)
+	: REAL;
+  LOCAL
+    Scalar : REAL;
+    Vec1, Vec2 : IfcDirection;
+    Ndim   : INTEGER;
+  END_LOCAL;
+  
+    IF NOT EXISTS (Arg1) OR NOT EXISTS (Arg2) THEN
+      Scalar := ?;
+    ELSE
+      IF (Arg1.Dim <> Arg2.Dim) THEN
+        Scalar := ?;
+      ELSE
+        BEGIN
+          Vec1 := IfcNormalise(Arg1);
+          Vec2 := IfcNormalise(Arg2);
+          Ndim := Arg1.Dim;
+          Scalar := 0.0;
+          REPEAT i := 1 TO Ndim;
+            Scalar := Scalar + Vec1.DirectionRatios[i]*Vec2.DirectionRatios[i];
+          END_REPEAT;
+        END;
+      END_IF;
+    END_IF;
+    RETURN (Scalar);
+END_FUNCTION;
+
+FUNCTION IfcFirstProjAxis
+	(ZAxis, Arg : IfcDirection)
+	: IfcDirection;
+  LOCAL
+    XAxis : IfcDirection;
+    V     : IfcDirection;
+    Z     : IfcDirection;
+    XVec  : IfcVector;
+  END_LOCAL;
+  
+    IF (NOT EXISTS(ZAxis)) THEN
+      RETURN (?) ;
+    ELSE
+      Z := IfcNormalise(ZAxis);
+      IF NOT EXISTS(Arg) THEN
+        IF (Z.DirectionRatios <> [1.0,0.0,0.0]) THEN
+          V := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([1.0,0.0,0.0]);
+        ELSE
+          V := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0,1.0,0.0]);
+        END_IF;
+      ELSE
+        IF (Arg.Dim <> 3) THEN
+          RETURN (?) ;
+        END_IF;
+        IF ((IfcCrossProduct(Arg,Z).Magnitude) = 0.0) THEN
+          RETURN (?);
+        ELSE
+          V := IfcNormalise(Arg);
+        END_IF;
+      END_IF;
+      XVec  := IfcScalarTimesVector(IfcDotProduct(V, Z), Z);
+      XAxis := IfcVectorDifference(V, XVec).Orientation;
+      XAxis := IfcNormalise(XAxis);
+    END_IF;
+    RETURN(XAxis);
+END_FUNCTION;
+
+FUNCTION IfcLeapYear
+	(Year : IfcYearNumber)
+	: BOOLEAN;
+  
+  IF ((((Year MOD 4) = 0) AND ((Year MOD 100) <> 0)) OR
+              ((Year MOD 400) = 0)) THEN
+    RETURN(TRUE);
+  ELSE
+    RETURN(FALSE);
+  END_IF;
+END_FUNCTION;
+
+FUNCTION IfcListToArray
+	(Lis : LIST [0:?] OF GENERIC : T;
+         Low,U : INTEGER)
+	: ARRAY OF GENERIC : T;
+     LOCAL
+       N   : INTEGER;
+       Res : ARRAY [Low:U] OF GENERIC : T;
+     END_LOCAL;
+        
+     N := SIZEOF(Lis);
+     IF (N <> (U-Low +1)) THEN
+       RETURN(?);
+     ELSE
+       Res := [Lis[1] : N];
+       REPEAT i := 2 TO N;
+         Res[Low+i-1] := Lis[i];
+       END_REPEAT;
+       RETURN(Res);
+     END_IF;
+END_FUNCTION;
+
+FUNCTION IfcLoopHeadToTail
+	(ALoop : IfcEdgeLoop)
+	: LOGICAL;
+     LOCAL
+       N : INTEGER;
+       P : LOGICAL := TRUE;
+     END_LOCAL;
+       
+       N := SIZEOF (ALoop.EdgeList);
+       REPEAT i := 2 TO N;
+         P := P AND (ALoop.EdgeList[i-1].EdgeEnd :=:
+                     ALoop.EdgeList[i].EdgeStart);
+       END_REPEAT;     
+       RETURN (P);
+END_FUNCTION;
+
+FUNCTION IfcMlsTotalThickness
+	(LayerSet : IfcMaterialLayerSet)
+	: IfcLengthMeasure;
+    LOCAL
+      Max : IfcLengthMeasure := LayerSet.MaterialLayers[1].LayerThickness;    
+    END_LOCAL;
+  
+    IF SIZEOF(LayerSet.MaterialLayers) > 1 THEN
+      REPEAT i := 2 TO HIINDEX(LayerSet.MaterialLayers);
+         Max := Max + LayerSet.MaterialLayers[i].LayerThickness;
+      END_REPEAT;
+    END_IF;
+    RETURN (Max);
+END_FUNCTION;
+
+FUNCTION IfcNormalise
+	(Arg : IfcVectorOrDirection)
+	: IfcVectorOrDirection;
+  LOCAL
+    Ndim : INTEGER;
+    V    : IfcDirection
+         := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([1.,0.]); 
+    Vec  : IfcVector 
+         := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector (
+              IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([1.,0.]), 1.);
+    Mag  : REAL;
+    Result : IfcVectorOrDirection
+           := V;
+  END_LOCAL;
+  
+    IF NOT EXISTS (Arg) THEN
+      RETURN (?);
+    ELSE
+      Ndim := Arg.Dim;
+      IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg) THEN
+        BEGIN
+  	V.DirectionRatios := Arg\IfcVector.Orientation.DirectionRatios;
+          Vec.Magnitude := Arg\IfcVector.Magnitude;
+  	Vec.Orientation := V;
+          IF Arg.Magnitude = 0.0 THEN
+            RETURN(?);
+          ELSE
+            Vec.Magnitude := 1.0;
+          END_IF;
+        END;
+      ELSE
+        V.DirectionRatios := Arg.DirectionRatios;
+      END_IF;
+      Mag := 0.0;
+        REPEAT i := 1 TO Ndim;
+          Mag := Mag + V.DirectionRatios[i]*V.DirectionRatios[i];
+        END_REPEAT;
+      IF Mag > 0.0 THEN
+        Mag := SQRT(Mag);
+        REPEAT i := 1 TO Ndim;
+          V.DirectionRatios[i] := V.DirectionRatios[i]/Mag;
+        END_REPEAT;
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(arg) THEN
+          Vec.Orientation := V;
+          Result := Vec;
+        ELSE
+          Result := V;
+        END_IF;
+      ELSE
+        RETURN(?);
+      END_IF;
+    END_IF;
+    RETURN (Result);
+END_FUNCTION;
+
+FUNCTION IfcOrthogonalComplement
+	(Vec : IfcDirection)
+	: IfcDirection;
+  LOCAL
+    Result : IfcDirection ;
+  END_LOCAL;
+    IF NOT EXISTS (Vec) OR (Vec.Dim <> 2) THEN
+      RETURN(?);
+    ELSE
+      Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([-Vec.DirectionRatios[2], Vec.DirectionRatios[1]]);
+      RETURN(Result);
+    END_IF;
+END_FUNCTION;
+
+FUNCTION IfcPathHeadToTail
+	(APath : IfcPath)
+	: LOGICAL;
+     LOCAL
+       N : INTEGER := 0;
+       P : LOGICAL := UNKNOWN;
+     END_LOCAL;
+       N := SIZEOF (APath.EdgeList);
+     REPEAT i := 2 TO N;
+        P := P AND (APath.EdgeList[i-1].EdgeEnd :=:
+                    APath.EdgeList[i].EdgeStart);
+     END_REPEAT;
+     RETURN (P);
+END_FUNCTION;
+
+FUNCTION IfcSameAxis2Placement
+	(ap1, ap2 : IfcAxis2Placement; Epsilon : REAL)
+	: LOGICAL;
+  
+    RETURN (IfcSameDirection(ap1.P[1],ap2.P[1],Epsilon) AND
+            IfcSameDirection(ap1.P[2],ap2.P[2],Epsilon) AND
+            IfcSameCartesianPoint(ap1.Location,ap1.Location,Epsilon));
+END_FUNCTION;
+
+FUNCTION IfcSameCartesianPoint
+	(cp1, cp2 : IfcCartesianPoint; Epsilon : REAL)
+	: LOGICAL;
+    
+    LOCAL
+      cp1x : REAL := cp1.Coordinates[1];
+      cp1y : REAL := cp1.Coordinates[2];
+      cp1z : REAL := 0;
+      cp2x : REAL := cp2.Coordinates[1];
+      cp2y : REAL := cp2.Coordinates[2];
+      cp2z : REAL := 0;
+    END_LOCAL;
+  
+    IF (SIZEOF(cp1.Coordinates) > 2) THEN
+      cp1z := cp1.Coordinates[3];
+    END_IF;
+  
+    IF (SIZEOF(cp2.Coordinates) > 2) THEN
+      cp2z := cp2.Coordinates[3];
+    END_IF;
+  
+    RETURN (IfcSameValue(cp1x,cp2x,Epsilon) AND
+            IfcSameValue(cp1y,cp2y,Epsilon) AND
+            IfcSameValue(cp1z,cp2z,Epsilon));
+END_FUNCTION;
+
+FUNCTION IfcSameDirection
+	(dir1, dir2 : IfcDirection; Epsilon : REAL)
+	: LOGICAL;
+    LOCAL
+      dir1x : REAL := dir1.DirectionRatios[1];
+      dir1y : REAL := dir1.DirectionRatios[2];
+      dir1z : REAL := 0;
+      dir2x : REAL := dir2.DirectionRatios[1];
+      dir2y : REAL := dir2.DirectionRatios[2];
+      dir2z : REAL := 0;
+    END_LOCAL;
+  
+    IF (SIZEOF(dir1.DirectionRatios) > 2) THEN
+      dir1z := dir1.DirectionRatios[3];
+    END_IF;
+  
+    IF (SIZEOF(dir2.DirectionRatios) > 2) THEN
+      dir2z := dir2.DirectionRatios[3];
+    END_IF;
+    
+    RETURN (IfcSameValue(dir1x,dir2x,Epsilon) AND
+            IfcSameValue(dir1y,dir2y,Epsilon) AND
+            IfcSameValue(dir1z,dir2z,Epsilon));
+END_FUNCTION;
+
+FUNCTION IfcSameValidPrecision
+	(Epsilon1, Epsilon2 : REAL)
+	: LOGICAL;
+    LOCAL
+      ValidEps1, ValidEps2 : REAL;
+      DefaultEps           : REAL := 0.000001;
+      DerivationOfEps      : REAL := 1.001;
+      UpperEps             : REAL := 1.0;
+    END_LOCAL;
+    
+      ValidEps1 := NVL(Epsilon1, DefaultEps);
+      ValidEps2 := NVL(Epsilon2, DefaultEps);
+      RETURN ((0.0 < ValidEps1) AND (ValidEps1 <= (DerivationOfEps * ValidEps2)) AND 
+              (ValidEps2 <= (DerivationOfEps * ValidEps1)) AND (ValidEps2 < UpperEps));
+END_FUNCTION;
+
+FUNCTION IfcSameValue
+	(Value1, Value2 : REAL; Epsilon : REAL)
+	: LOGICAL;
+    LOCAL
+      ValidEps    : REAL;
+      DefaultEps  : REAL := 0.000001;
+    END_LOCAL;
+    
+    ValidEps := NVL(Epsilon, DefaultEps);
+    RETURN ((Value1 + ValidEps > Value2) AND (Value1 < Value2 + ValidEps));
+END_FUNCTION;
+
+FUNCTION IfcScalarTimesVector
+	(Scalar : REAL; Vec : IfcVectorOrDirection)
+	: IfcVector;
+  LOCAL
+    V : IfcDirection;
+    Mag : REAL;
+    Result : IfcVector;
+  END_LOCAL;
+  
+    IF NOT EXISTS (Scalar) OR NOT EXISTS (Vec) THEN
+      RETURN (?) ;
+    ELSE
+      IF 'IFC2X3.IFCVECTOR' IN TYPEOF (Vec) THEN
+        V := Vec\IfcVector.Orientation;
+        Mag := Scalar * Vec\IfcVector.Magnitude;
+      ELSE
+        V := Vec;
+        Mag := Scalar;
+      END_IF;
+      IF (Mag < 0.0 ) THEN
+        REPEAT i := 1 TO SIZEOF(V.DirectionRatios);
+          V.DirectionRatios[i] := -V.DirectionRatios[i];
+        END_REPEAT;
+        Mag := -Mag;
+      END_IF;
+      Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector(IfcNormalise(V), Mag);
+    END_IF;
+    RETURN (Result);
+END_FUNCTION;
+
+FUNCTION IfcSecondProjAxis
+	(ZAxis, XAxis, Arg: IfcDirection)
+	: IfcDirection;
+  LOCAL
+    YAxis : IfcVector;
+    V     : IfcDirection;
+    Temp  : IfcVector;
+  END_LOCAL;
+  
+    IF NOT EXISTS(Arg) THEN
+      V := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0,1.0,0.0]);
+    ELSE
+      V := Arg;
+    END_IF;
+    Temp  := IfcScalarTimesVector(IfcDotProduct(V, ZAxis), ZAxis);
+    YAxis := IfcVectorDifference(V, Temp);
+    Temp  := IfcScalarTimesVector(IfcDotProduct(V, XAxis), XAxis);
+    YAxis := IfcVectorDifference(YAxis, Temp);
+    YAxis := IfcNormalise(YAxis);
+    RETURN(YAxis.Orientation);
+END_FUNCTION;
+
+FUNCTION IfcShapeRepresentationTypes
+	(RepType : IfcLabel; Items : SET OF IfcRepresentationItem)
+	: LOGICAL;
+      
+      LOCAL
+        Count : INTEGER := 0;
+      END_LOCAL;
+  
+      CASE RepType OF 
+      'Curve2D' :
+        BEGIN 
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCCURVE' IN TYPEOF(temp)) 
+                   AND (temp.Dim = 2)));
+        END;
+      'Annotation2D' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | (
+                    SIZEOF(TYPEOF(temp) * [
+                     'IFC2X3.IFCPOINT',
+                     'IFC2X3.IFCCURVE',
+                     'IFC2X3.IFCGEOMETRICCURVESET',
+                     'IFC2X3.IFCANNOTATIONFILLAREA',
+                     'IFC2X3.IFCDEFINEDSYMBOL',
+                     'IFC2X3.IFCTEXTLITERAL',
+                     'IFC2X3.IFCDRAUGHTINGCALLOUT']) = 1)
+                   ));
+        END;
+      'GeometricSet' : 
+        BEGIN 
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCGEOMETRICSET' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCPOINT' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCCURVE' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCSURFACE' IN TYPEOF(temp))));
+        END;
+      'GeometricCurveSet' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCGEOMETRICCURVESET' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCGEOMETRICSET' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCPOINT' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCCURVE' IN TYPEOF(temp))));
+           REPEAT i:=1 TO HIINDEX(Items);  
+             IF ('IFC2X3.IFCGEOMETRICSET' IN TYPEOF(Items[i]))
+             THEN
+               IF (SIZEOF(QUERY(temp <* Items[i]\IfcGeometricSet.Elements | 'IFC2X3.IFCSURFACE' IN TYPEOF(temp))) > 0)
+               THEN
+                 Count := Count - 1;
+               END_IF;
+             END_IF;
+           END_REPEAT;
+        END;
+      'SurfaceModel' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | SIZEOF([
+                     'IFC2X3.IFCSHELLBASEDSURFACEMODEL',
+                     'IFC2X3.IFCFACEBASEDSURFACEMODEL',
+                     'IFC2X3.IFCFACETEDBREP',
+                     'IFC2X3.IFCFACETEDBREPWITHVOIDS'] * TYPEOF(temp)) >= 1
+                   ));      
+        END;
+      'SolidModel' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCSOLIDMODEL' IN TYPEOF(temp))));            
+        END;
+      'SweptSolid' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCSWEPTAREASOLID' IN TYPEOF(temp))));            
+        END;
+      'CSG' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCBOOLEANRESULT' IN TYPEOF(temp))));            
+        END;
+      'Clipping' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCBOOLEANCLIPPINGRESULT' IN TYPEOF(temp))));            
+        END;
+      'AdvancedSweptSolid' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCSURFACECURVESWEPTAREASOLID' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCSWEPTDISKSOLID' IN TYPEOF(temp))));      
+        END;
+      'Brep' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCFACETEDBREP' IN TYPEOF(temp))
+                   OR ('IFC2X3.IFCFACETEDBREPWITHVOIDS' IN TYPEOF(temp))));      
+        END;
+      'BoundingBox' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCBOUNDINGBOX' IN TYPEOF(temp))));
+          IF (SIZEOF(Items) > 1)
+          THEN
+            Count := 0;
+          END_IF;   
+        END;
+      'SectionedSpine' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCSECTIONEDSPINE' IN TYPEOF(temp))));      
+        END;
+      'MappedRepresentation' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | ('IFC2X3.IFCMAPPEDITEM' IN TYPEOF(temp))));  
+        END;
+       OTHERWISE : RETURN(?);
+      END_CASE;
+      RETURN (Count = SIZEOF(Items));
+END_FUNCTION;
+
+FUNCTION IfcTopologyRepresentationTypes
+	(RepType : IfcLabel; Items : SET OF IfcRepresentationItem)
+	: LOGICAL;
+      
+      LOCAL
+        Count : INTEGER := 0;
+      END_LOCAL;
+  
+      CASE RepType OF 
+      'Vertex' :
+        BEGIN 
+          Count := SIZEOF(QUERY(temp <* Items | 
+                    ('IFC2X3.IFCVERTEX' IN TYPEOF(temp))));
+        END;
+      'Edge' : 
+        BEGIN 
+          Count := SIZEOF(QUERY(temp <* Items | 
+                    ('IFC2X3.IFCEDGE' IN TYPEOF(temp))));
+        END;
+      'Path' : 
+        BEGIN 
+          Count := SIZEOF(QUERY(temp <* Items | 
+                    ('IFC2X3.IFCPATH' IN TYPEOF(temp))));
+        END;
+      'Face' : 
+        BEGIN 
+          Count := SIZEOF(QUERY(temp <* Items | 
+                    ('IFC2X3.IFCFACE' IN TYPEOF(temp))));
+        END;
+      'Shell' :
+        BEGIN
+          Count := SIZEOF(QUERY(temp <* Items | 
+                    ('IFC2X3.IFCOPENSHELL' IN TYPEOF(temp))
+                      OR ('IFC2X3.IFCCLOSEDSHELL' IN TYPEOF(temp))));
+        END;
+      'Undefined': RETURN(TRUE);
+       OTHERWISE : RETURN(?);
+      END_CASE;
+      RETURN (Count = SIZEOF(Items));
+END_FUNCTION;
+
+FUNCTION IfcUniquePropertyName
+	(Properties : SET [1:?] OF IfcProperty)
+	: LOGICAL;
+  
+  LOCAL
+    Names : SET OF IfcIdentifier := [];
+  END_LOCAL;
+  
+  REPEAT i:=1 TO HIINDEX(Properties);
+    Names := Names + Properties[i].Name;
+  END_REPEAT;
+  RETURN (SIZEOF(Names) = SIZEOF(Properties));
+END_FUNCTION;
+
+FUNCTION IfcValidCalendarDate
+	(Date : IfcCalendarDate)
+	: LOGICAL;
+  IF NOT ({1 <= Date.DayComponent <= 31}) THEN    
+    RETURN(FALSE);  
+  END_IF;
+  CASE Date.MonthComponent OF
+    4         : RETURN({ 1<= Date.DayComponent <= 30});
+    6         : RETURN({ 1<= Date.DayComponent <= 30});
+    9         : RETURN({ 1<= Date.DayComponent <= 30});
+    11        : RETURN({ 1<= Date.DayComponent <= 30});    
+    2         :    
+    BEGIN
+      IF (IfcLeapYear(Date.YearComponent)) THEN
+        RETURN({ 1<= Date.DayComponent <= 29});      
+      ELSE
+        RETURN({ 1<= Date.DayComponent <= 28});      
+      END_IF;    
+    END;
+    OTHERWISE : RETURN(TRUE);  
+  END_CASE;
+END_FUNCTION;
+
+FUNCTION IfcValidTime
+	(Time: IfcLocalTime)
+	: BOOLEAN;
+  IF EXISTS (Time.SecondComponent) THEN
+    RETURN (EXISTS (Time.MinuteComponent));  
+  ELSE    
+    RETURN (TRUE);  
+  END_IF;
+END_FUNCTION;
+
+FUNCTION IfcVectorDifference
+	(Arg1, Arg2 : IfcVectorOrDirection)
+	: IfcVector;
+  LOCAL
+    Result : IfcVector;
+    Res, Vec1, Vec2 : IfcDirection;
+    Mag, Mag1, Mag2 : REAL;
+    Ndim : INTEGER;
+  END_LOCAL;
+  
+    IF ((NOT EXISTS (Arg1)) OR (NOT EXISTS (Arg2))) OR (Arg1.Dim <> Arg2.Dim) THEN
+      RETURN (?) ;
+    ELSE
+      BEGIN
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg1) THEN
+          Mag1 := Arg1\IfcVector.Magnitude;
+          Vec1 := Arg1\IfcVector.Orientation;
+        ELSE
+          Mag1 := 1.0;
+          Vec1 := Arg1;
+        END_IF;
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg2) THEN
+          Mag2 := Arg2\IfcVector.Magnitude;
+          Vec2 := Arg2\IfcVector.Orientation;
+        ELSE
+          Mag2 := 1.0;
+          Vec2 := Arg2;
+        END_IF;
+        Vec1 := IfcNormalise (Vec1);
+        Vec2 := IfcNormalise (Vec2);
+        Ndim := SIZEOF(Vec1.DirectionRatios);
+        Mag  := 0.0;
+        Res  := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0:Ndim]);
+  
+        REPEAT i := 1 TO Ndim;
+          Res.DirectionRatios[i] := Mag1*Vec1.DirectionRatios[i] - Mag2*Vec2.DirectionRatios[i];
+          Mag := Mag + (Res.DirectionRatios[i]*Res.DirectionRatios[i]);
+        END_REPEAT;
+  
+        IF (Mag > 0.0 ) THEN
+          Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector( Res, SQRT(Mag));
+        ELSE
+          Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector( Vec1, 0.0);
+        END_IF;
+      END;
+    END_IF;
+    RETURN (Result);
+END_FUNCTION;
+
+FUNCTION IfcVectorSum
+	(Arg1, Arg2 : IfcVectorOrDirection)
+	: IfcVector;
+  LOCAL
+    Result : IfcVector;
+    Res, Vec1, Vec2 : IfcDirection;
+    Mag, Mag1, Mag2 : REAL;
+    Ndim : INTEGER;
+  END_LOCAL;
+  
+    IF ((NOT EXISTS (Arg1)) OR (NOT EXISTS (Arg2))) OR (Arg1.Dim <> Arg2.Dim) THEN
+      RETURN (?) ;
+    ELSE
+      BEGIN
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg1) THEN
+          Mag1 := Arg1\IfcVector.Magnitude;
+          Vec1 := Arg1\IfcVector.Orientation;
+        ELSE
+          Mag1 := 1.0;
+          Vec1 := Arg1;
+        END_IF;
+        IF 'IFC2X3.IFCVECTOR' IN TYPEOF(Arg2) THEN
+          Mag2 := Arg2\IfcVector.Magnitude;
+          Vec2 := Arg2\IfcVector.Orientation;
+        ELSE
+          Mag2 := 1.0;
+          Vec2 := Arg2;
+        END_IF;
+        Vec1 := IfcNormalise (Vec1);
+        Vec2 := IfcNormalise (Vec2);
+        Ndim := SIZEOF(Vec1.DirectionRatios);
+        Mag  := 0.0;
+        Res  := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcDirection([0.0:Ndim]);
+  
+        REPEAT i := 1 TO Ndim;
+          Res.DirectionRatios[i] := Mag1*Vec1.DirectionRatios[i] + Mag2*Vec2.DirectionRatios[i];
+          Mag := Mag + (Res.DirectionRatios[i]*Res.DirectionRatios[i]);
+        END_REPEAT;
+  
+        IF (Mag > 0.0 ) THEN
+          Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector( Res, SQRT(Mag));
+        ELSE
+          Result := IfcRepresentationItem() || IfcGeometricRepresentationItem () || IfcVector( Vec1, 0.0);
+        END_IF;
+      END;
+    END_IF;
+    RETURN (Result);
+END_FUNCTION;
+
+RULE IfcRepresentationContextSameWCS FOR 
+	(IfcGeometricRepresentationContext);
+    LOCAL
+      IsDifferent  : LOGICAL := FALSE;
+    END_LOCAL;
+      IF (SIZEOF(IfcGeometricRepresentationContext) > 1)
+      THEN
+        REPEAT i := 2 TO HIINDEX(IfcGeometricRepresentationContext);
+          IF (IfcGeometricRepresentationContext[1].WorldCoordinateSystem :<>: IfcGeometricRepresentationContext[i].WorldCoordinateSystem)
+          THEN
+            IsDifferent := (NOT(IfcSameValidPrecision(IfcGeometricRepresentationContext[1].Precision,
+                                                      IfcGeometricRepresentationContext[i].Precision)))
+                        OR (NOT(IfcSameAxis2Placement(IfcGeometricRepresentationContext[1].WorldCoordinateSystem,
+                                                      IfcGeometricRepresentationContext[i].WorldCoordinateSystem,
+                                                      IfcGeometricRepresentationContext[1].Precision)));
+            IF (IsDifferent = TRUE) THEN
+              ESCAPE;
+            END_IF;
+          END_IF;
+        END_REPEAT;
+      END_IF;
+    WHERE
+      WR1 : IsDifferent = FALSE;
+END_RULE;
+
+RULE IfcSingleProjectInstance FOR 
+	(IfcProject);
+    WHERE
+      WR1 : SIZEOF(IfcProject) <= 1;
+END_RULE;
 
 END_SCHEMA;

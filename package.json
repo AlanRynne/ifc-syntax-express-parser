@@ -1,18 +1,31 @@
 {
-  "name": "express-simple-parser",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "build-and-test": "npm run build-g && npm run test",
-    "test": "node index.js",
-    "build-g": "nearleyc expressGrammar.ne --out expressGrammar.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "moo": "^0.5.0",
-    "nearley": "^2.16.0"
-  }
+    "name": "ifc-syntax-express-parser",
+    "version": "0.0.1",
+    "description": "A Nearley based parser for EXPRESS language files. Commonly used to define IFC data structure versions.",
+    "main": "index.js",
+    "scripts": {
+        "test": "jest",
+        "coverage": "jest --coverage",
+        "build": "npm run build-grammar && tsc",
+        "build-grammar": "nearleyc src/grammar/expressGrammar.ne --out src/grammar/expressGrammar.ts"
+    },
+    "keywords": [
+        "ifc",
+        "express",
+        "BuildingSmart",
+        "OpenBIM"
+    ],
+    "author": "Alan Rynne",
+    "license": "ISC",
+    "dependencies": {
+        "moo": "^0.5.1",
+        "nearley": "^2.19.3"
+    },
+    "devDependencies": {
+        "@types/jest": "^25.2.3",
+        "@types/nearley": "^2.11.1",
+        "jest": "^26.0.1",
+        "ts-jest": "^26.1.0",
+        "typescript": "^3.9.5"
+    }
 }
