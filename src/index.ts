@@ -2,15 +2,7 @@ import nearley from "nearley";
 import grammar from "./grammar/expressGrammar";
 import fs from 'fs';
 import readline from 'readline';
-
-export interface IIfcSchema {
-    schema: string
-    header: string[]
-    types: any
-    entities: any
-    functions: any
-    rules: any
-}
+import { ISchema } from './express/ISchema';
 
 export class ExpressParser {
     private parser: nearley.Parser
@@ -19,9 +11,9 @@ export class ExpressParser {
         this.parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar))
     }
 
-    parse(filePath: string): Promise<IIfcSchema> {
+    parse(filePath: string): Promise<ISchema> {
         return new Promise((resolve, reject) => {
-            let expressSchema: IIfcSchema = {
+            let expressSchema: ISchema = {
                 schema: null,
                 header: [],
                 types: {},
