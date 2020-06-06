@@ -3,5 +3,7 @@ node_modules/
 IFC4x2.Net/*
 **/bin/
 **/obj/
-out/
+out/*
+!out/.gitkeep
 **/Icon
+src/generated/*.js
