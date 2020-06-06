@@ -53,7 +53,7 @@ const lexer = moo.states({
 });
 
 %}
-
+@preprocessor typescript
 @lexer lexer
 
 main -> type {% id %} 
@@ -120,7 +120,7 @@ function -> "FUNCTION"
 
 functionArgs -> functionArg (_ ";" _ functionArg):* {%
     function(data) {
-        obj = {}
+        var obj = {}
         data[0].names.forEach(name => obj[name] = data[0].type)
         if(data[1]) data[1].forEach(d => {
             d[3].names.forEach(name => obj[name] = d[3].type)
@@ -130,7 +130,7 @@ functionArgs -> functionArg (_ ";" _ functionArg):* {%
 %}
 functionArg -> word (_ "," _ word):* _ ":" _ ("GENERIC" _ ":"):? _ typeInput {%
     function(data){
-        names = [data[0]]
+        var names = [data[0]]
         data[1].forEach(d => names.push(d[3]))
         return {
             names: names,
@@ -168,7 +168,7 @@ entity -> "ENTITY"
         _ %ent_end _ ";" 
         {%
             function(data) {
-                props = {};
+                var props = {};
                 if(data[12] == null) props = null
                 else data[12].forEach(d => props[d.name] = {type: d.type, optional: d.optional})
                 return {
@@ -210,7 +210,7 @@ uniques -> "UNIQUE" _ uniqueProps {%
 %}
 uniqueProps -> (_ uniqueProp):* {%
     function(data) {
-        obj = {}
+        var  obj = {}
         data[0].forEach(d => {
             obj[d[1].name] = { type: d[1].type }
             if (d[1].other) obj[d[1].name]["other"] = d[1].other
@@ -278,7 +278,7 @@ entDerive -> "DERIVE" (( _ (anything|string)):+ _ ";"):+ {%
 
 inverse -> "INVERSE" (_ inverseProp):* {%
     function(data) {
-        obj = {}
+        let obj = {}
         data[1].forEach(d => {
             obj[d[1].name] = {
                 type: d[1].type,
