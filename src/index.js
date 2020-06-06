@@ -1,11 +1,11 @@
 const nearley = require("nearley");
-const grammar = require("./expressGrammar.js");
+const grammar = require("./generated/expressGrammar.js");
 const fs = require('fs');
 const readline = require('readline');
 
 
 let parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
-
+let fileName = 'testExpress'
 let jsonObj = {
     schema: null,
     header: [],
@@ -15,7 +15,7 @@ let jsonObj = {
     rules: {}
 };
 const rl = readline.createInterface({
-    input: fs.createReadStream('./Data/testExpress.exp'),
+    input: fs.createReadStream(`./Data/${fileName}.exp`),
     crlfDelay: Infinity
 });
 
@@ -42,7 +42,7 @@ rl.on('line', (l) => {
 });
 rl.on('close', () => {
     fs.writeFile(
-        'testExpress.json',
+        `out/${fileName}.json`,
         JSON.stringify(jsonObj, null, 2),
         (err) => {
             // In case of a error throw err. 

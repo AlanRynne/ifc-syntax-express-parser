@@ -1,20 +1,20 @@
 {
-  "name": "express-simple-parser",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "build-and-test": "npm run build-g && npm run test",
-    "test": "node index.js",
-    "build-g": "nearleyc expressGrammar.ne --out expressGrammar.js"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "fso": "^2.6.3",
-    "moo": "^0.5.0",
-    "nearley": "^2.16.0",
-    "xmlhttprequest": "^1.8.0"
-  }
+    "name": "express-simple-parser",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "build-and-test": "npm run build-g && npm run test",
+        "test": "node src/index.js",
+        "build-g": "nearleyc src/expressGrammar.ne --out src/generated/expressGrammar.js"
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "fso": "^2.6.3",
+        "moo": "^0.5.0",
+        "nearley": "^2.16.0",
+        "xmlhttprequest": "^1.8.0"
+    }
 }
