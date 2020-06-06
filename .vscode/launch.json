@@ -7,7 +7,7 @@
             "type": "node",
             "request": "launch",
             "name": "Launch Program",
-            "preLaunchTask": "build-g",
+            "preLaunchTask": "build-grammar",
             "program": "${workspaceFolder}/src/index.js",
             "internalConsoleOptions": "openOnSessionStart",
         },

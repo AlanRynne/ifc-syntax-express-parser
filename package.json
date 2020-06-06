@@ -1,12 +1,12 @@
 {
-    "name": "express-simple-parser",
-    "version": "1.0.0",
+    "name": "ifc-syntax-express-parser",
+    "version": "0.0.1",
     "description": "",
     "main": "index.js",
     "scripts": {
         "build-and-test": "npm run build-g && npm run test",
-        "test": "node src/index.js",
-        "build-g": "nearleyc src/expressGrammar.ne --out src/generated/expressGrammar.js"
+        "test-grammar": "node src/index.js",
+        "build-grammar": "nearleyc src/expressGrammar.ne --out src/generated/expressGrammar.js"
     },
     "keywords": [],
     "author": "",
