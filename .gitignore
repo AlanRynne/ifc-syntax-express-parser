@@ -1,5 +1,6 @@
 node_modules/
 
 bin/
-
+obj/
 IFC4x2.Net/*
+**/Icon
