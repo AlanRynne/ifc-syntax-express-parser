@@ -8,15 +8,27 @@
             "request": "launch",
             "name": "Launch Program",
             "preLaunchTask": "build-grammar",
-            "program": "${workspaceFolder}/src/index.js",
+            "program": "${workspaceFolder}/dist/index.js",
             "internalConsoleOptions": "openOnSessionStart",
         },
         {
             "type": "node",
             "request": "launch",
             "name": "Convert to C#",
-            "program": "${workspaceFolder}/src/ifcToCSharp.js",
+            "program": "${workspaceFolder}/dist/ifcToCSharp.js",
             "internalConsoleOptions": "openOnSessionStart",
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Jest Run All",
+            "program": "${workspaceFolder}/node_modules/.bin/jest",
+            // "args": ["${relativeFile}"],
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "windows": {
+                "program": "${workspaceFolder}/node_modules/jest/bin/jest"
+            }
         }
     ]
 }

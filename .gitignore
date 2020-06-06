@@ -6,4 +6,6 @@ IFC4x2.Net/*
 out/*
 !out/.gitkeep
 **/Icon
-src/generated/*.js
+src/grammar/*.ts
+dist/
+coverage/
