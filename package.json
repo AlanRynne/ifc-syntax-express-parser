@@ -11,7 +11,8 @@
         "build-grammar": "nearleyc src/grammar/express.grammar.ne --out src/grammar/index.ts",
         "clean": "rm -r dist src/grammar/index.ts",
         "pretest": "npm run build",
-        "prepublish": "npm run build"
+        "prepare": "npm run build",
+        "prepublishOnly": "npm test"
     },
     "keywords": [
         "ifc",
