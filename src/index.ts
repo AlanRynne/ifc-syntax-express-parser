@@ -14,7 +14,7 @@ export class ExpressParser {
     parse(filePath: string): Promise<ISchema> {
         return new Promise((resolve, reject) => {
             let expressSchema: ISchema = {
-                schema: null,
+                schema: "",
                 header: [],
                 types: {},
                 entities: {},

@@ -2,7 +2,8 @@
     "name": "ifc-syntax-express-parser",
     "version": "0.0.1",
     "description": "A Nearley based parser for EXPRESS language files. Commonly used to define IFC data structure versions.",
-    "main": "index.js",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
     "scripts": {
         "test": "jest",
         "coverage": "jest --coverage",
@@ -23,6 +24,7 @@
     },
     "devDependencies": {
         "@types/jest": "^25.2.3",
+        "@types/moo": "^0.5.3",
         "@types/nearley": "^2.11.1",
         "jest": "^26.0.1",
         "ts-jest": "^26.1.0",
