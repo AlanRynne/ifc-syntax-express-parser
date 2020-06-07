@@ -1,6 +1,6 @@
 {
     "name": "@alanrynne/ifc-syntax-express-parser",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "description": "A Nearley based parser for EXPRESS language files. Commonly used to define IFC data structure versions.",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
