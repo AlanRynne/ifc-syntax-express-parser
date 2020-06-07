@@ -8,7 +8,8 @@
         "test": "jest",
         "coverage": "jest --coverage",
         "build": "npm run build-grammar && tsc",
-        "build-grammar": "nearleyc src/grammar/expressGrammar.ne --out src/grammar/expressGrammar.ts"
+        "build-grammar": "nearleyc src/grammar/express.grammar.ne --out src/grammar/index.ts",
+        "clean": "rm -r dist src/grammar/index.ts"
     },
     "keywords": [
         "ifc",

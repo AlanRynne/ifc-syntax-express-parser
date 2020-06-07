@@ -1,5 +1,5 @@
 import nearley from "nearley";
-import grammar from "./grammar/expressGrammar";
+import grammar from "./grammar";
 import fs from 'fs';
 import readline from 'readline';
 import { ISchema } from './express/ISchema';
@@ -11,9 +11,9 @@ export class ExpressParser {
         this.parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar))
     }
 
-    parse(filePath: string): Promise<ISchema> {
+    parse(filePath: string): Promise<any> {
         return new Promise((resolve, reject) => {
-            let expressSchema: ISchema = {
+            let expressSchema = {
                 schema: "",
                 header: [],
                 types: {},
@@ -48,7 +48,12 @@ export class ExpressParser {
                         else if (expEnt.ifcType == "rule") expressSchema.rules[expEnt.name] = expEnt;
                         else if (expEnt.ifcType == "comment") expressSchema.header = expEnt.value;
                         else if (expEnt.name == "schema") expressSchema.schema = expEnt.version;
-                        else expressSchema[expEnt.name] = expEnt;
+                        else {
+                            let name: string = expEnt.name
+                            // TODO: Ignored this compiling error, but this should be type checked.
+                            // @ts-ignore
+                            expressSchema[name] = expEnt;
+                        }
                         this.parser = new nearley.Parser(nearley.Grammar.fromCompiled(grammar));
                     }
                 } else if (this.parser.results.length > 1) {

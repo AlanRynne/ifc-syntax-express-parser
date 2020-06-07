@@ -1,57 +1,6 @@
 @{%
-const moo = require('moo');
-
-const lexer = moo.states({
-    main: {
-        space: { match: /\s+/, lineBreaks: true },
-        ';': ';',
-        ent_start: { match: ['ENTITY', 'TYPE', 'FUNCTION', 'RULE'], push: 'ifcEntity' },
-        cmnt_start: { match: "(*", push: 'comment'},
-        word: {match:/[a-zA-Z0-9_]+/, type: moo.keywords({
-            schema: 'SCHEMA',
-            schema_end: 'END_SCHEMA'
-        })}
-    },
-    ifcEntity: {
-        space: { match: /\s+/, lineBreaks: true },
-        number: /\d+/,
-        punctuation: ['=', ';', ',',':','[',']','(',')','?'],
-        "'": {match:"'", push:'string'},
-        enum: { match: ['ENUMERATION','SELECT'], push: 'enumValues' },
-        ent_end: { match: ['END_ENTITY','END_TYPE','END_FUNCTION','END_RULE'], pop: true },
-        unsupported: { match: ['DERIVE','WHERE','LOCAL','CASE','IF', 'RETURN'], next: 'unsupported' },
-        word: {match: /\w+/, type: moo.keywords({
-            list: ['LIST','ARRAY','BAG','SET'],
-            primitive: ['REAL','BINARY','LOGICAL','BOOLEAN','NUMBER','INTEGER','STRING'],
-            keywords: ['OF', 'IN', 'SELF', 'OR', 'INVERSE','UNIQUE']
-        })} 
-    },
-    string: {
-        "'": { match: '\'', pop: true },
-        string: { match: /[^\']+/, lineBreaks: true}
-    },
-    comment: {
-        cmnt_end: {match:"*)", pop: true},
-        anything: { match: /[^*)]+/, lineBreaks: true},
-    },
-    unsupported: {
-        ';': ';',
-        str_start: { match: '\'', push: 'string' },
-        ent_end: { match: ['END_ENTITY','END_TYPE','END_FUNCTION','END_RULE'], pop: true },
-        space: { match: /\s+/, lineBreaks: true },
-        anything: { match: /[^\s\'\;]+/, lineBreaks: true }
-    },
-    enumValues: {
-        space: { match: /\s+/, lineBreaks: true },
-        "(":"(",
-        ",":",",
-        ")": {match: ")", pop: true},
-        word: {match: /\w+/, type: moo.keywords({
-            "OF": "OF",
-        })}
-    }
-});
-
+import { lexer } from "./tokens"
+import { extractPair, extractArray } from "./utilities"
 %}
 @preprocessor typescript
 @lexer lexer
@@ -63,13 +12,13 @@ main -> type {% id %}
         | function {% id %}
         | rule {% id %}
         | %schema_end _ ";" {%
-            function(data) {
+            function(data: any[]) {
                 return null
             }
         %}
 
 schemaTag -> %schema _ word _ ";" {%
-    function(data) {
+    function(data: any[]) {
         return {
             name: "schema",
             version: data[2]
@@ -78,9 +27,9 @@ schemaTag -> %schema _ word _ ";" {%
 %}
 
 comment -> %cmnt_start (_ %anything):+ _ %cmnt_end {% 
-    function(data) {
-        let newData = []
-        data[1].forEach(array => {
+    function(data: any[]) {
+        let newData: any[] = []
+        data[1].forEach((array:any[]) => {
             newData.push(array[1].text)
         });
         return {
@@ -98,7 +47,7 @@ rule -> "RULE"
         _ functionContent 
         _ "END_RULE" _ ";" 
         {%
-            function(data) {
+            function(data: any[]) {
                 return {
                     ifcType: "rule",
                     name: data[2],
@@ -115,7 +64,7 @@ function -> "FUNCTION"
             _ functionContent
             _ "END_FUNCTION" _ ";"
             {%
-                function(data) {
+                function(data: any[]) {
                     return {
                         ifcType: "function",
                         name: data[2],
@@ -126,20 +75,20 @@ function -> "FUNCTION"
             %}
 
 functionArgs -> functionArg (_ ";" _ functionArg):* {%
-    function(data) {
+    function(data: any[]) {
         var obj = {}
-        data[0].names.forEach(name => obj[name] = data[0].type)
-        if(data[1]) data[1].forEach(d => {
-            d[3].names.forEach(name => obj[name] = d[3].type)
+        data[0].names.forEach((name: string) => obj[name] = data[0].type)
+        if(data[1]) data[1].forEach((d: any[]) => {
+            d[3].names.forEach((name: string) => obj[name] = d[3].type)
         })
         return obj
     }
 %}
 
 functionArg -> word (_ "," _ word):* _ ":" _ ("GENERIC" _ ":"):? _ typeInput {%
-    function(data){
+    function(data: any[]){
         var names = [data[0]]
-        data[1].forEach(d => names.push(d[3]))
+        data[1].forEach((d:any[])=> names.push(d[3]))
         return {
             names: names,
             type: {
@@ -151,7 +100,7 @@ functionArg -> word (_ "," _ word):* _ ":" _ ("GENERIC" _ ":"):? _ typeInput {%
 %}
 
 functionReturn -> ("GENERIC" _ ":"):? _ typeInput{%
-    function(data){
+    function(data: any[]){
         return {
             type: data[2],
             generic:  data[0] ? true : false
@@ -160,8 +109,7 @@ functionReturn -> ("GENERIC" _ ":"):? _ typeInput{%
 %}
 
 functionContent -> %unsupported (( _ (anything|string)):+ _ ";"):+ {% 
-
-    function(data) {
+    function(data: any[]) {
         return null
     }
 %}
@@ -177,10 +125,10 @@ entity -> "ENTITY"
         _ typeWhere:? 
         _ %ent_end _ ";" 
         {%
-            function(data) {
-                var props = {};
+            function(data: any[]) {
+                var props: any = {};
                 if(data[12] == null) props = null
-                else data[12].forEach(d => props[d.name] = {type: d.type, optional: d.optional})
+                else data[12].forEach((d:any)=> props[d.name] = {type: d.type, optional: d.optional})
                 return {
                     ifcType: "entity",
                     name: data[2],
@@ -196,14 +144,14 @@ entity -> "ENTITY"
             }
         %}
 
-supertype -> "SUBTYPE" _ "OF" _ "(" _ word _ ")" {% (data) => data[6] %}
-subtypes -> "SUPERTYPE" _ "OF" _ "(" _ supertypeInput _ ")" {% (data) => data[6]%}
+supertype -> "SUBTYPE" _ "OF" _ "(" _ word _ ")" {% (data: any[]) => data[6] %}
+subtypes -> "SUPERTYPE" _ "OF" _ "(" _ supertypeInput _ ")" {% (data: any[]) => data[6]%}
 supertypeInput -> word {% id %}
-                | "ONEOF" _ parenList {% (data) => data[2] %}
+                | "ONEOF" _ parenList {% (data:any[]) => data[2] %}
 
 entityProps -> entityProp:* {% id %}
 entityProp -> _ word _ ":" _ "OPTIONAL":? _ entityPropType _ ";" {%
-    function(data) {
+    function(data:any[]) {
         return {
             name: data[1],
             type: data[7],
@@ -214,14 +162,14 @@ entityProp -> _ word _ ":" _ "OPTIONAL":? _ entityPropType _ ";" {%
 entityPropType -> typeInput {% id %}
 
 uniques -> "UNIQUE" _ uniqueProps {%
-    function(data) {
+    function(data: any[]) {
         return data[2]
     }
 %}
 uniqueProps -> (_ uniqueProp):* {%
-    function(data) {
+    function(data: any[]) {
         var  obj = {}
-        data[0].forEach(d => {
+        data[0].forEach((d:any[])=> {
             obj[d[1].name] = { type: d[1].type }
             if (d[1].other) obj[d[1].name]["other"] = d[1].other
         })
@@ -229,7 +177,7 @@ uniqueProps -> (_ uniqueProp):* {%
     }
 %}
 uniqueProp -> word _ ":" _ word (_ "," _ word):? _ ";" {% 
-    function(data) {
+    function(data: any[]) {
         return {
             name: data[0],
             type: data[4],
@@ -240,7 +188,7 @@ uniqueProp -> word _ ":" _ word (_ "," _ word):? _ ";" {%
 %}
 
 type -> "TYPE" _ word _ "=" _ typeInput _ ";" _ typeWhere:? _ "END_TYPE" _ ";" {%
-    function(data) {
+    function(data: any[]) {
         return {
             ifcType: "type",
             name: data[2],
@@ -249,7 +197,7 @@ type -> "TYPE" _ word _ "=" _ typeInput _ ";" _ typeWhere:? _ "END_TYPE" _ ";" {
     }
 %}
 
-typeInput -> %primitive {% (data) => data[0].text %}
+typeInput -> %primitive {% (data:any) => data[0].text %}
             | listDef {% id %}
             | word {% id %}
             | stringDef {% id %}
@@ -258,11 +206,11 @@ typeInput -> %primitive {% (data) => data[0].text %}
 
 
 listDef -> %list 
-        _ ("[" _ (number | word) _ ":" _ (number | "?" {%(data) => [null] %} | word) _ "]"):? 
+        _ ("[" _ (number | word) _ ":" _ (number | "?" {%(data:any[]) => [null] %} | word) _ "]"):? 
         _ "OF" 
         _ ("UNIQUE" | "GENERIC" _ ":"):? 
-        _ ( listDef | %word {%(data)=> [data[0].text] %} |  %primitive {%(data)=>[data[0].text] %}) {%
-    function(data) {
+        _ ( listDef | %word {%(data:any[])=> [data[0].text] %} |  %primitive {%(data:any[])=>[data[0].text] %}) {%
+    function(data:any[]) {
         return {
             type: data[0].text,
             contains: data[8][0],
@@ -273,10 +221,10 @@ listDef -> %list
 %}
 
 entDerive -> "DERIVE" (( _ (anything|string)):+ _ ";"):+ {% 
-    function(data) {
-        let newData = []
+    function(data:any[]) {
+        let newData: any[] = []
         if(data[1] == null) return null
-        data[1].forEach(array => {
+        data[1].forEach((array:any[]) => {
             newData.push(array[1][0])
         });
         return {
@@ -287,9 +235,9 @@ entDerive -> "DERIVE" (( _ (anything|string)):+ _ ";"):+ {%
 %}
 
 inverse -> "INVERSE" (_ inverseProp):* {%
-    function(data) {
-        let obj = {}
-        data[1].forEach(d => {
+    function(data:any[]) {
+        let obj: any = {}
+        data[1].forEach((d: any[]) => {
             obj[d[1].name] = {
                 type: d[1].type,
                 for: d[1].for
@@ -300,7 +248,7 @@ inverse -> "INVERSE" (_ inverseProp):* {%
 %}
 
 inverseProp -> word _ ":" _ (listDef | word) _ "FOR" _ word _ ";"{%
-    function(data) {
+    function(data: any) {
         return {
             name: data[0],
             type: data[4][0],
@@ -310,10 +258,10 @@ inverseProp -> word _ ":" _ (listDef | word) _ "FOR" _ word _ ";"{%
 %}
 
 entInverse -> "INVERSE" (( _ (anything|string)):+ _ ";"):+ {% 
-    function(data) {
-        let newData = []
+    function(data: any[]) {
+        let newData: any[] = []
         if(data[1] == null) return null
-        data[1].forEach(array => {
+        data[1].forEach((array:any) => {
             newData.push(array[1][0])
         });
         return {
@@ -324,10 +272,10 @@ entInverse -> "INVERSE" (( _ (anything|string)):+ _ ";"):+ {%
 %}
 
 typeWhere -> "WHERE" (( _ (anything|string)):+ _ ";"):+ {% 
-    function(data) {
-        let newData = []
+    function(data: any[]) {
+        let newData: any[] = []
         if(data[1] == null) return null
-        data[1].forEach(array => {
+        data[1].forEach((array:any[]) => {
             newData.push(array[1][0])
         });
         return {
@@ -338,7 +286,7 @@ typeWhere -> "WHERE" (( _ (anything|string)):+ _ ";"):+ {%
 %}
 
 enumeration -> "ENUMERATION" _ "OF" _ parenList {% 
-    function(data) {
+    function(data:any[]) {
         return {
             type: "enum",
             values: data[4]
@@ -347,7 +295,7 @@ enumeration -> "ENUMERATION" _ "OF" _ parenList {%
 %}
 
 select -> "SELECT" _ parenList {% 
-    function(data) {
+    function(data:any[]) {
         return {
             type: "select",
             values: data[2]
@@ -356,7 +304,7 @@ select -> "SELECT" _ parenList {%
 %}
 
 stringDef -> "STRING" _ "(" _ number _ ")" (_ "FIXED"):? {%
-    function(data) {
+    function(data:any[]) {
         return {
             type: "STRING",
             maxSize: data[4],
@@ -367,39 +315,8 @@ stringDef -> "STRING" _ "(" _ number _ ")" (_ "FIXED"):? {%
 
 parenList -> "(" _ word (_ "," _ word):* _ ")" {% extractArray %}
 
-word -> %word {% (data) => data[0].text %}
-anything -> %anything {% (data) => data[0].text %}
-string -> "'" %string "'" {% (data) => data[1].text %}
-number -> %number {% (data) => data[0].text %}
-_ -> null | %space {% function(d) { return null; } %}
-
-
-@{%
-
-function extractPair(kv, output) {
-    if(kv[0]) { output[kv[0]] = kv[1]; }
-}
-
-function extractObject(d) {
-    let output = {};
-
-    extractPair(d[1], output);
-
-    for (let i in d[3]) {
-        extractPair(d[3][i][3], output);
-    }
-
-    return output;
-}
-
-function extractArray(d) {
-    let output = [d[2]];
-
-    for (let i in d[3]) {
-        output.push(d[3][i][3]);
-    }
-
-    return output;
-}
-
-%}
+word -> %word {% (data:any[]) => data[0].text %}
+anything -> %anything {% (data:any[]) => data[0].text %}
+string -> "'" %string "'" {% (data:any[]) => data[1].text %}
+number -> %number {% (data:any[]) => data[0].text %}
+_ -> null | %space {% function(d: any[]) { return null; } %}
