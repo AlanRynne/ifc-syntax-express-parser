@@ -1,5 +1,5 @@
 {
-    "name": "ifc-syntax-express-parser",
+    "name": "@alanrynne/ifc-syntax-express-parser",
     "version": "0.0.1",
     "description": "A Nearley based parser for EXPRESS language files. Commonly used to define IFC data structure versions.",
     "main": "dist/index.js",
@@ -9,7 +9,9 @@
         "coverage": "jest --coverage",
         "build": "npm run build-grammar && tsc",
         "build-grammar": "nearleyc src/grammar/express.grammar.ne --out src/grammar/index.ts",
-        "clean": "rm -r dist src/grammar/index.ts"
+        "clean": "rm -r dist src/grammar/index.ts",
+        "pretest": "npm run build",
+        "prepublish": "npm run build"
     },
     "keywords": [
         "ifc",
