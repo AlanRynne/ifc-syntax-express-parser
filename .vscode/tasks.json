@@ -21,7 +21,6 @@
                 "kind": "test",
                 "isDefault": true
             },
-            "dependsOn": ["clean", "build"],
             "problemMatcher": [],
             "label": "test",
             "detail": "jest"
