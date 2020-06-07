@@ -9,5 +9,4 @@ out/*
 
 src/grammar/index.ts
 
-dist/
 coverage/

@@ -6,7 +6,9 @@
             "type": "npm",
             "label": "build",
             "script": "build",
-            "problemMatcher": [],
+            "problemMatcher": [
+                "$tsc"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
@@ -20,8 +22,15 @@
                 "isDefault": true
             },
             "problemMatcher": [],
-            "label": "npm: test",
+            "label": "test",
             "detail": "jest"
+        },
+        {
+            "type": "npm",
+            "script": "clean",
+            "problemMatcher": [],
+            "label": "clean",
+            "detail": "rm -r dist"
         }
     ]
 }
