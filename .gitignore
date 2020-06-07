@@ -6,6 +6,8 @@ IFC4x2.Net/*
 out/*
 !out/.gitkeep
 **/Icon
-src/grammar/*.ts
+
+src/grammar/index.ts
+
 dist/
 coverage/
