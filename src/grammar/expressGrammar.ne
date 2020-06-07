@@ -91,15 +91,22 @@ comment -> %cmnt_start (_ %anything):+ _ %cmnt_end {%
     }
 %}
 
-rule -> "RULE" _ word _ "FOR" _ "(" _ word _ ")" _ ";" _ functionContent _ "END_RULE" _ ";" {%
-    function(data) {
-        return {
-            ifcType: "rule",
-            name: data[2],
-            for: data[8]
-        }
-    }
-%}
+rule -> "RULE" 
+        _ word 
+        _ "FOR" 
+        _ "(" _ word _ ")" _ ";" 
+        _ functionContent 
+        _ "END_RULE" _ ";" 
+        {%
+            function(data) {
+                return {
+                    ifcType: "rule",
+                    name: data[2],
+                    for: data[8]
+                }
+            }
+        %}
+
 function -> "FUNCTION" 
             _ word 
             _ "(" _ functionArgs _ ")" 
@@ -128,6 +135,7 @@ functionArgs -> functionArg (_ ";" _ functionArg):* {%
         return obj
     }
 %}
+
 functionArg -> word (_ "," _ word):* _ ":" _ ("GENERIC" _ ":"):? _ typeInput {%
     function(data){
         var names = [data[0]]
@@ -141,6 +149,7 @@ functionArg -> word (_ "," _ word):* _ ":" _ ("GENERIC" _ ":"):? _ typeInput {%
         }
     }
 %}
+
 functionReturn -> ("GENERIC" _ ":"):? _ typeInput{%
     function(data){
         return {
@@ -149,6 +158,7 @@ functionReturn -> ("GENERIC" _ ":"):? _ typeInput{%
         }
     }
 %}
+
 functionContent -> %unsupported (( _ (anything|string)):+ _ ";"):+ {% 
 
     function(data) {
@@ -251,7 +261,7 @@ listDef -> %list
         _ ("[" _ (number | word) _ ":" _ (number | "?" {%(data) => [null] %} | word) _ "]"):? 
         _ "OF" 
         _ ("UNIQUE" | "GENERIC" _ ":"):? 
-        _ ( listDef | %word {%(data)=> [data[0].text] %} | %primitive {%(data)=>[data[0].text] %}) {%
+        _ ( listDef | %word {%(data)=> [data[0].text] %} |  %primitive {%(data)=>[data[0].text] %}) {%
     function(data) {
         return {
             type: data[0].text,
