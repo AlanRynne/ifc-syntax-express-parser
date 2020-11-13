@@ -69,6 +69,7 @@ function -> "FUNCTION"
                         ifcType: "function",
                         name: data[2],
                         arguments: data[6],
+                        code: null,
                         returns: data[12]
                     }
                 }

@@ -2,7 +2,12 @@ import nearley from "nearley";
 import grammar from "./grammar";
 import fs from 'fs';
 import readline from 'readline';
-import { ISchema } from './express/ISchema';
+
+export { ISchema } from "./express/ISchema"
+export { IType } from "./express/IType"
+export { IRule } from "./express/IRule"
+export { IFunction } from "./express/IFunction"
+export { IEntity } from "./express/IEntity"
 
 export class ExpressParser {
     private parser: nearley.Parser
@@ -66,4 +71,32 @@ export class ExpressParser {
             });
         })
     }
+}
+
+export const IfcReleases = {
+  IFC2X3: "./Data/IFC2X3.exp",
+  IFC2X3_TC1: "./Data/IFC2X3 TC1.exp",
+  IFC4: "./Data/IFC4.exp",
+  IFC4_ADD1: "./Data/IFC4 ADD1.exp",
+  IFC4_ADD2: "./Data/IFC4 ADD2.exp",
+  IFC4_ADD2_TC1: "./Data/IFC4 ADD2 TC1.exp",
+  IFC4X1: "./Data/IFC4X1.exp",
+  IFC4X2: "./Data/IFC4X2.exp",
+  IFC4X3: "./Data/IFC4X3 RC1.exp"
+}
+
+export enum IFCVersion {
+  IFC2X3 = "IFC2X3",
+  IFC2X3_TC1 = "IFC2X3_TC1",
+  IFC4 = "IFC4",
+  IFC4_ADD1 = "IFC4_ADD1",
+  IFC4_ADD2 = "IFC4_ADD2",
+  IFC4_ADD2_TC1 = "IFC4_ADD2_TC1",
+  IFC4X1 = "IFC4X1",
+  IFC4X2 = "IFC4X2",
+  IFC4X3 = "IFC4X3"
+}
+
+export function getSchemaForRelease(version: IFCVersion) {
+  return new ExpressParser().parse(IfcReleases[IFCVersion.IFC4X2])
 }
