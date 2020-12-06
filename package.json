@@ -1,7 +1,8 @@
 {
     "name": "@alanrynne/ifc-syntax-express-parser",
-    "version": "0.0.2",
+    "version": "0.1.0",
     "description": "A Nearley based parser for EXPRESS language files. Commonly used to define IFC data structure versions.",
+    "repository": "https://github.com/AlanRynne/ifc-syntax-express-parser.git",
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
@@ -11,7 +12,8 @@
         "build-grammar": "nearleyc src/grammar/express.grammar.ne --out src/grammar/index.ts",
         "clean": "rm -r dist src/grammar/index.ts",
         "pretest": "npm run build",
-        "prepublish": "npm run build"
+        "prepare": "npm run build",
+        "prepublishOnly": "npm test"
     },
     "keywords": [
         "ifc",
@@ -23,14 +25,14 @@
     "license": "ISC",
     "dependencies": {
         "moo": "^0.5.1",
-        "nearley": "^2.19.3"
+        "nearley": "^2.19.6"
     },
     "devDependencies": {
         "@types/jest": "^25.2.3",
         "@types/moo": "^0.5.3",
         "@types/nearley": "^2.11.1",
-        "jest": "^26.0.1",
-        "ts-jest": "^26.1.0",
-        "typescript": "^3.9.5"
+        "jest": "^26.4.2",
+        "ts-jest": "^26.3.0",
+        "typescript": "^3.9.7"
     }
 }

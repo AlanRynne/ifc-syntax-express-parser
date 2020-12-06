@@ -1,6 +1,6 @@
 export interface IFunction {
-    ifcType: string,
-    name: string,
-    arguments: any,
-    returns: any
+  ifcType: "function"
+  name: string
+  arguments: any
+  returns: any
 }
