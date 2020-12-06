@@ -69,6 +69,7 @@ function -> "FUNCTION"
                         ifcType: "function",
                         name: data[2],
                         arguments: data[6],
+                        code: null,
                         returns: data[12]
                     }
                 }
@@ -85,7 +86,7 @@ functionArgs -> functionArg (_ ";" _ functionArg):* {%
     }
 %}
 
-functionArg -> word (_ "," _ word):* _ ":" _ ("GENERIC" _ ":"):? _ typeInput {%
+functionArg -> word (_ "," _ word):* _ ":" _ (("GENERIC"|"Generic") _ ":"):? _ typeInput {%
     function(data: any[]){
         var names = [data[0]]
         data[1].forEach((d:any[])=> names.push(d[3]))
@@ -99,7 +100,7 @@ functionArg -> word (_ "," _ word):* _ ":" _ ("GENERIC" _ ":"):? _ typeInput {%
     }
 %}
 
-functionReturn -> ("GENERIC" _ ":"):? _ typeInput{%
+functionReturn -> (("GENERIC"|"Generic") _ ":"):? _ typeInput{%
     function(data: any[]){
         return {
             type: data[2],
@@ -197,19 +198,20 @@ type -> "TYPE" _ word _ "=" _ typeInput _ ";" _ typeWhere:? _ "END_TYPE" _ ";" {
     }
 %}
 
-typeInput -> %primitive {% (data:any) => data[0].text %}
-            | listDef {% id %}
+typeInput -> listDef {% id %}
+            | binaryDef {% id %}
             | word {% id %}
             | stringDef {% id %}
             | enumeration {% id %}
             | select {% id %}
+            | %primitive {% (data:any) => data[0].text %}
 
 
 listDef -> %list 
         _ ("[" _ (number | word) _ ":" _ (number | "?" {%(data:any[]) => [null] %} | word) _ "]"):? 
-        _ "OF" 
+        _ ("OF" | "Of")
         _ ("UNIQUE" | "GENERIC" _ ":"):? 
-        _ ( listDef | %word {%(data:any[])=> [data[0].text] %} |  %primitive {%(data:any[])=>[data[0].text] %}) {%
+        _ ( listDef | binaryDef | %word {%(data:any[])=> [data[0].text] %} |  %primitive {%(data:any[])=>[data[0].text] %}) {%
     function(data:any[]) {
         return {
             type: data[0].text,
@@ -299,6 +301,15 @@ select -> "SELECT" _ parenList {%
         return {
             type: "select",
             values: data[2]
+        }
+    }
+%}
+
+binaryDef -> "BINARY" _ "(" _ number _ ")" {%
+    data => {
+        return {
+            type: "BINARY()",
+            maxSize: data[2]
         }
     }
 %}

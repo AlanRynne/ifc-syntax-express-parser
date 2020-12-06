@@ -1,5 +1,5 @@
 export interface IRule {
-    ifcType: string,
-    name: string,
-    for: any
+  ifcType: "rule"
+  name: string
+  for: any
 }
